@@ -1,0 +1,173 @@
+"""Privacy and security middleware for PII/secret scrubbing.
+
+This module provides a SecurityMiddleware that uses regex-based pattern matching
+to redact sensitive information (PII, secrets, API keys, etc.) from all data
+before it is sent to the local LLM for processing.
+"""
+
+import logging
+import re
+from typing import Any, Dict, List, Optional
+
+logger = logging.getLogger(__name__)
+
+
+class SecurityMiddleware:
+    """Middleware for scrubbing PII and secrets from data.
+    
+    Uses regex patterns to identify and redact sensitive information before
+    data is processed by the LLM or stored in vector databases.
+    """
+
+    # Common patterns for sensitive data
+    PATTERNS = {
+        # API Keys and Tokens
+        "api_key": re.compile(
+            r"(?i)(api[_-]?key|apikey)\s*[:=]\s*([a-zA-Z0-9_\-]{20,})", re.MULTILINE
+        ),
+        "bearer_token": re.compile(
+            r"(?i)(bearer\s+)?([a-zA-Z0-9_\-\.]{40,})", re.MULTILINE
+        ),
+        "slack_token": re.compile(
+            r"(?i)(xox[baprs]-[0-9a-zA-Z\-]{10,})", re.MULTILINE
+        ),
+        # AWS Credentials
+        "aws_access_key": re.compile(
+            r"(?i)(AKIA[0-9A-Z]{16})", re.MULTILINE
+        ),
+        "aws_secret_key": re.compile(
+            r"(?i)(aws[_-]?secret[_-]?access[_-]?key)\s*[:=]\s*([a-zA-Z0-9/+=]{40})",
+            re.MULTILINE,
+        ),
+        # Email addresses
+        "email": re.compile(
+            r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", re.MULTILINE
+        ),
+        # Credit card numbers
+        "credit_card": re.compile(
+            r"\b(?:\d{4}[-\s]?){3}\d{4}\b", re.MULTILINE
+        ),
+        # SSN
+        "ssn": re.compile(
+            r"\b\d{3}-\d{2}-\d{4}\b", re.MULTILINE
+        ),
+        # IP addresses (private IPs - may want to keep public IPs)
+        "private_ip": re.compile(
+            r"\b(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})\b",
+            re.MULTILINE,
+        ),
+        # Passwords
+        "password": re.compile(
+            r"(?i)(password|passwd|pwd)\s*[:=]\s*([^\s]{6,})", re.MULTILINE
+        ),
+        # Database connection strings
+        "db_connection": re.compile(
+            r"(?i)(postgresql|mysql|mongodb)://[^\s]+", re.MULTILINE
+        ),
+        # JWT tokens
+        "jwt": re.compile(
+            r"eyJ[A-Za-z0-9-_=]+\.eyJ[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*",
+            re.MULTILINE,
+        ),
+    }
+
+    # Custom patterns can be added via configuration
+    custom_patterns: Dict[str, re.Pattern] = {}
+
+    def __init__(self, custom_patterns: Optional[Dict[str, str]] = None):
+        """Initialize the security middleware.
+        
+        Args:
+            custom_patterns: Optional dictionary of custom regex patterns to add
+        """
+        if custom_patterns:
+            for name, pattern_str in custom_patterns.items():
+                try:
+                    self.custom_patterns[name] = re.compile(pattern_str, re.MULTILINE | re.IGNORECASE)
+                except re.error as e:
+                    logger.warning(f"Invalid regex pattern '{name}': {e}")
+
+    def scrub(self, text: str, replacement: str = "[REDACTED]") -> str:
+        """Scrub sensitive information from text.
+        
+        Args:
+            text: Input text to scrub
+            replacement: String to replace matches with (default: "[REDACTED]")
+            
+        Returns:
+            Scrubbed text with sensitive information replaced
+        """
+        if not isinstance(text, str):
+            return text
+
+        scrubbed = text
+
+        # Apply all built-in patterns
+        for pattern_name, pattern in self.PATTERNS.items():
+            matches = pattern.findall(scrubbed)
+            if matches:
+                logger.debug(f"Found {len(matches)} matches for pattern '{pattern_name}'")
+                # Replace matches while preserving structure
+                if isinstance(matches[0], tuple):
+                    # Pattern has groups - replace the entire match
+                    scrubbed = pattern.sub(replacement, scrubbed)
+                else:
+                    # Simple pattern - replace matches
+                    scrubbed = pattern.sub(replacement, scrubbed)
+
+        # Apply custom patterns
+        for pattern_name, pattern in self.custom_patterns.items():
+            matches = pattern.findall(scrubbed)
+            if matches:
+                logger.debug(f"Found {len(matches)} matches for custom pattern '{pattern_name}'")
+                scrubbed = pattern.sub(replacement, scrubbed)
+
+        return scrubbed
+
+    def scrub_dict(self, data: Dict[str, Any], replacement: str = "[REDACTED]") -> Dict[str, Any]:
+        """Recursively scrub sensitive information from a dictionary.
+        
+        Args:
+            data: Dictionary to scrub
+            replacement: String to replace matches with
+            
+        Returns:
+            Scrubbed dictionary
+        """
+        if not isinstance(data, dict):
+            return self.scrub(str(data), replacement) if isinstance(data, str) else data
+
+        scrubbed = {}
+        for key, value in data.items():
+            if isinstance(value, dict):
+                scrubbed[key] = self.scrub_dict(value, replacement)
+            elif isinstance(value, list):
+                scrubbed[key] = [self.scrub_dict(item, replacement) if isinstance(item, dict) else self.scrub(str(item), replacement) if isinstance(item, str) else item for item in value]
+            elif isinstance(value, str):
+                scrubbed[key] = self.scrub(value, replacement)
+            else:
+                scrubbed[key] = value
+
+        return scrubbed
+
+    def scrub_list(self, data: List[Any], replacement: str = "[REDACTED]") -> List[Any]:
+        """Recursively scrub sensitive information from a list.
+        
+        Args:
+            data: List to scrub
+            replacement: String to replace matches with
+            
+        Returns:
+            Scrubbed list
+        """
+        scrubbed = []
+        for item in data:
+            if isinstance(item, dict):
+                scrubbed.append(self.scrub_dict(item, replacement))
+            elif isinstance(item, list):
+                scrubbed.append(self.scrub_list(item, replacement))
+            elif isinstance(item, str):
+                scrubbed.append(self.scrub(item, replacement))
+            else:
+                scrubbed.append(item)
+        return scrubbed

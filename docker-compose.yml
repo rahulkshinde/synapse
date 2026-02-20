@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  synapse-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: synapse-app
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - OLLAMA_HOST=http://inference-engine:11434
+      - CHROMA_HOST=vector-db
+      - CHROMA_PORT=8000
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN:-}
+      - SLACK_DEFAULT_CHANNEL=${SLACK_DEFAULT_CHANNEL:-#incidents}
+      - PROMETHEUS_URL=${PROMETHEUS_URL:-http://prometheus:9090}
+    volumes:
+      - ./:/app
+      - vector_data:/app/data/vector
+    depends_on:
+      - inference-engine
+      - vector-db
+    restart: unless-stopped
+    networks:
+      - synapse-vpc
+
+  inference-engine:
+    image: ollama/ollama:latest
+    container_name: inference-engine
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_KEEP_ALIVE=24h
+    restart: unless-stopped
+    networks:
+      - synapse-vpc
+    # Pre-pull llama3.1 model on startup
+    entrypoint: |
+      sh -c "
+      ollama serve &
+      sleep 5 &&
+      ollama pull llama3.1 &&
+      wait
+      "
+
+  vector-db:
+    image: chromadb/chroma:latest
+    container_name: vector-db
+    ports:
+      - "8001:8000"
+    volumes:
+      - vector_data:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
+      - ANONYMIZED_TELEMETRY=FALSE
+      - CHROMA_SERVER_AUTHN_CREDENTIALS=${CHROMA_AUTH_TOKEN:-}
+      - CHROMA_SERVER_AUTHN_PROVIDER=${CHROMA_AUTH_PROVIDER:-chromadb}
+    restart: unless-stopped
+    networks:
+      - synapse-vpc
+
+volumes:
+  ollama_data:
+    driver: local
+  vector_data:
+    driver: local
+
+networks:
+  synapse-vpc:
+    driver: bridge
+    internal: false  # Set to true for fully private VPC (no external access)

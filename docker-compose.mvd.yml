@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus-mvd
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus-demo.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    restart: unless-stopped
+    networks:
+      - synapse-mvd
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama-mvd
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-mvd-data:/root/.ollama
+    restart: unless-stopped
+    networks:
+      - synapse-mvd
+
+networks:
+  synapse-mvd:
+    driver: bridge
+
+volumes:
+  ollama-mvd-data:

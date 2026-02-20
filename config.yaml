@@ -1,0 +1,75 @@
+# Synapse SRE Framework Configuration
+# This file contains centralized configuration for VPC endpoints and plugin settings
+
+# LLM Configuration (Local Inference)
+llm:
+  url: "http://ollama:11434"  # Local Ollama instance URL
+  model: "llama3.1"           # Model to use for inference
+  temperature: 0.1             # Temperature for generation
+
+# Vector Database Configuration
+vector_db:
+  type: "chromadb"             # Options: chromadb, qdrant
+  host: "chromadb"
+  port: 8000
+  collection_name: "synapse_knowledge"
+
+# Plugin Configuration
+plugins:
+  # Metrics plugins configuration
+  metrics:
+    prometheus:
+      enabled: true
+      base_url: "http://prometheus:9090"
+      timeout: 30
+  
+  # Knowledge plugins configuration
+  knowledge:
+    # Example: Confluence plugin (when implemented)
+    # confluence:
+    #   enabled: true
+    #   base_url: "https://confluence.internal"
+    #   username: "${CONFLUENCE_USERNAME}"
+    #   api_token: "${CONFLUENCE_API_TOKEN}"
+    
+    # Example: Local Markdown plugin (when implemented)
+    # markdown:
+    #   enabled: true
+    #   directory: "/app/data/knowledge"
+  
+  # Messenger plugins configuration
+  messenger:
+    slack:
+      enabled: true
+      bot_token: "${SLACK_BOT_TOKEN}"  # From environment variable
+      default_channel: "#incidents"
+
+# Security Configuration
+security:
+  # Custom regex patterns for PII/secret detection
+  custom_patterns:
+    # Example: Custom API key pattern
+    # custom_api_key: "api[_-]?key[=:]\s*([a-zA-Z0-9]{32})"
+  
+  # Enable/disable scrubbing
+  enabled: true
+  replacement: "[REDACTED]"
+
+# Application Configuration
+app:
+  host: "0.0.0.0"
+  port: 8000
+  log_level: "INFO"
+  debug: false
+
+# VPC Endpoints (Private Network Configuration)
+vpc:
+  # Internal service endpoints
+  prometheus: "http://prometheus:9090"
+  chromadb: "http://chromadb:8000"
+  ollama: "http://ollama:11434"
+  
+  # External service endpoints (if needed)
+  # These should be accessible within your VPC
+  # slack_api: "https://slack.com/api"
+  # pagerduty_api: "https://api.pagerduty.com"
