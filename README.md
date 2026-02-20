@@ -17,17 +17,14 @@ Synapse uses a **plugin-first architecture** where core functionality is defined
 
 ```mermaid
 flowchart LR
-    subgraph AWS["☁️ AWS Cloud"]
+    subgraph aws_cloud["☁️ AWS Cloud"]
         direction TB
         CW[CloudWatch Alarms]
         PD[PagerDuty Webhook]
         EKS[EKS Metrics]
-        AWS --> CW
-        AWS --> PD
-        AWS --> EKS
     end
 
-    subgraph VPC["🛡️ Private VPC Boundary<br/>(Self-Hosted)"]
+    subgraph vpc_boundary["🛡️ Private VPC Boundary<br/>(Self-Hosted)"]
         direction TB
         CORE[Synapse Core<br/>FastAPI]
         SCRUB[PII Scrubber<br/>SecurityMiddleware]
@@ -40,21 +37,18 @@ flowchart LR
         LLM --> CORE
     end
 
-    subgraph GCP["☁️ GCP Cloud"]
+    subgraph gcp_cloud["☁️ GCP Cloud"]
         direction TB
         CM[Cloud Monitoring]
         PS[Pub/Sub]
         GKE[GKE Metrics]
-        GCP --> CM
-        GCP --> PS
-        GCP --> GKE
     end
 
-    subgraph EXT["🔌 Extensions"]
+    subgraph extensions["🔌 Extensions"]
         CUSTOM[Custom Extension<br/>Python Plugin]
     end
 
-    subgraph OUTPUT["📤 Output Channels"]
+    subgraph output_channels["📤 Output Channels"]
         direction TB
         SLACK[Slack]
         TEAMS[Microsoft Teams]
