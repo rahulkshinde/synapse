@@ -103,7 +103,7 @@ def send_pagerduty_incident(base_url: str) -> dict:
 
 def send_general_query(base_url: str, query: str) -> dict:
     print_step(3, "General SRE Query")
-    print(f"  Query: \"{query}\"")
+    print(f'  Query: "{query}"')
 
     try:
         start = time.time()

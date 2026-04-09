@@ -16,7 +16,9 @@ logger = logging.getLogger(__name__)
 class ExamplePrometheus(BaseMetrics):
 
     def __init__(self, base_url: Optional[str] = None, timeout: int = 30):
-        self.base_url = (base_url or os.getenv("PROMETHEUS_URL", "http://localhost:9090")).rstrip("/")
+        self.base_url = (
+            base_url or os.getenv("PROMETHEUS_URL", "http://localhost:9090")
+        ).rstrip("/")
         self.timeout = timeout
         self.api_url = f"{self.base_url}/api/v1"
 
@@ -25,7 +27,10 @@ class ExamplePrometheus(BaseMetrics):
         return "prometheus"
 
     def get_metrics(
-        self, query: str, start_time: Optional[str] = None, end_time: Optional[str] = None
+        self,
+        query: str,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         try:
             if start_time and end_time:
@@ -46,7 +51,9 @@ class ExamplePrometheus(BaseMetrics):
             data = response.json()
 
             if data["status"] != "success":
-                raise ValueError(f"Prometheus query failed: {data.get('error', 'Unknown error')}")
+                raise ValueError(
+                    f"Prometheus query failed: {data.get('error', 'Unknown error')}"
+                )
 
             results = []
             result_data = data.get("data", {}).get("result", [])
@@ -55,12 +62,18 @@ class ExamplePrometheus(BaseMetrics):
                 metric = item.get("metric", {})
                 value = item.get("value", [None, None])
 
-                results.append({
-                    "timestamp": datetime.fromtimestamp(value[0]).isoformat() if value[0] else datetime.utcnow().isoformat(),
-                    "value": float(value[1]) if value[1] is not None else 0.0,
-                    "labels": dict(metric),
-                    "name": metric.get("__name__", query),
-                })
+                results.append(
+                    {
+                        "timestamp": (
+                            datetime.fromtimestamp(value[0]).isoformat()
+                            if value[0]
+                            else datetime.utcnow().isoformat()
+                        ),
+                        "value": float(value[1]) if value[1] is not None else 0.0,
+                        "labels": dict(metric),
+                        "name": metric.get("__name__", query),
+                    }
+                )
 
             return results
         except RequestException as e:
@@ -88,7 +101,9 @@ class ExamplePrometheus(BaseMetrics):
             data = response.json()
 
             if data["status"] != "success":
-                raise ValueError(f"Prometheus query failed: {data.get('error', 'Unknown error')}")
+                raise ValueError(
+                    f"Prometheus query failed: {data.get('error', 'Unknown error')}"
+                )
 
             results = []
             result_data = data.get("data", {}).get("result", [])
@@ -99,12 +114,14 @@ class ExamplePrometheus(BaseMetrics):
 
                 for value_pair in values:
                     timestamp, value = value_pair
-                    results.append({
-                        "timestamp": datetime.fromtimestamp(timestamp).isoformat(),
-                        "value": float(value) if value is not None else 0.0,
-                        "labels": dict(metric),
-                        "name": metric.get("__name__", query),
-                    })
+                    results.append(
+                        {
+                            "timestamp": datetime.fromtimestamp(timestamp).isoformat(),
+                            "value": float(value) if value is not None else 0.0,
+                            "labels": dict(metric),
+                            "name": metric.get("__name__", query),
+                        }
+                    )
 
             return results
         except RequestException as e:
@@ -120,7 +137,9 @@ class ExamplePrometheus(BaseMetrics):
             data = response.json()
 
             if data["status"] != "success":
-                raise ValueError(f"Prometheus query failed: {data.get('error', 'Unknown error')}")
+                raise ValueError(
+                    f"Prometheus query failed: {data.get('error', 'Unknown error')}"
+                )
 
             return data.get("data", [])
         except RequestException as e:

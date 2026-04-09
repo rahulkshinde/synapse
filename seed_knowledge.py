@@ -9,7 +9,9 @@ from pathlib import Path
 
 import chromadb
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 
@@ -100,7 +102,9 @@ def seed_knowledge(
 
     collection.upsert(ids=ids, documents=contents, metadatas=metadatas)
 
-    logger.info(f"\nSeeded {len(documents)} runbooks into collection '{collection_name}'")
+    logger.info(
+        f"\nSeeded {len(documents)} runbooks into collection '{collection_name}'"
+    )
     logger.info(f"Total documents in collection: {collection.count()}")
 
     logger.info("\nVerification — test search for 'high cpu usage':")
@@ -109,18 +113,39 @@ def seed_knowledge(
         for i, doc_id in enumerate(results["ids"][0]):
             title = results["metadatas"][0][i].get("title", "?")
             dist = results["distances"][0][i] if results["distances"] else "?"
-            logger.info(f"  #{i+1}: {title} (distance={dist:.4f})" if isinstance(dist, float) else f"  #{i+1}: {title}")
+            logger.info(
+                f"  #{i+1}: {title} (distance={dist:.4f})"
+                if isinstance(dist, float)
+                else f"  #{i+1}: {title}"
+            )
     else:
         logger.warning("  No results returned — check ChromaDB embedding model")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Seed Synapse knowledge base with SRE runbooks")
-    parser.add_argument("--runbooks-dir", default="./runbooks", help="Path to runbooks directory")
-    parser.add_argument("--host", default=os.getenv("CHROMA_HOST", ""), help="ChromaDB host (empty for local)")
-    parser.add_argument("--port", type=int, default=int(os.getenv("CHROMA_PORT", "8001")), help="ChromaDB port")
-    parser.add_argument("--collection", default="synapse_knowledge", help="ChromaDB collection name")
-    parser.add_argument("--persist-dir", default="./data/chroma", help="Local persist directory")
+    parser = argparse.ArgumentParser(
+        description="Seed Synapse knowledge base with SRE runbooks"
+    )
+    parser.add_argument(
+        "--runbooks-dir", default="./runbooks", help="Path to runbooks directory"
+    )
+    parser.add_argument(
+        "--host",
+        default=os.getenv("CHROMA_HOST", ""),
+        help="ChromaDB host (empty for local)",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=int(os.getenv("CHROMA_PORT", "8001")),
+        help="ChromaDB port",
+    )
+    parser.add_argument(
+        "--collection", default="synapse_knowledge", help="ChromaDB collection name"
+    )
+    parser.add_argument(
+        "--persist-dir", default="./data/chroma", help="Local persist directory"
+    )
     args = parser.parse_args()
 
     seed_knowledge(

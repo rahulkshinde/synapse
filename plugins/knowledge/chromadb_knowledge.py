@@ -103,9 +103,7 @@ class ChromaDBKnowledge(BaseKnowledge):
         try:
             result = self._collection.get(ids=[item_id])
             if result and result["documents"] and result["documents"][0]:
-                metadata = (
-                    result["metadatas"][0] if result["metadatas"] else {}
-                )
+                metadata = result["metadatas"][0] if result["metadatas"] else {}
                 return {
                     "id": item_id,
                     "title": metadata.get("title", "Untitled"),

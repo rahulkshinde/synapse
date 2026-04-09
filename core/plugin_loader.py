@@ -51,14 +51,14 @@ class PluginLoader:
                     self._register_plugin(obj)
 
         except Exception as e:
-            logger.error(f"Failed to load plugin from {file_path}: {str(e)}", exc_info=True)
+            logger.error(
+                f"Failed to load plugin from {file_path}: {str(e)}", exc_info=True
+            )
 
     def _is_plugin_class(self, cls: Type) -> bool:
         bases = inspect.getmro(cls)
         return (
-            BaseMetrics in bases
-            or BaseKnowledge in bases
-            or BaseMessenger in bases
+            BaseMetrics in bases or BaseKnowledge in bases or BaseMessenger in bases
         ) and cls not in (BaseMetrics, BaseKnowledge, BaseMessenger)
 
     def _register_plugin(self, plugin_class: Type):
@@ -75,20 +75,29 @@ class PluginLoader:
             if isinstance(plugin_instance, BaseMetrics):
                 plugin_name = plugin_instance.name
                 self.metrics_plugins[plugin_name] = plugin_instance
-                logger.info(f"Registered metrics plugin: {plugin_name} ({plugin_class.__name__})")
+                logger.info(
+                    f"Registered metrics plugin: {plugin_name} ({plugin_class.__name__})"
+                )
 
             elif isinstance(plugin_instance, BaseKnowledge):
                 plugin_name = plugin_instance.name
                 self.knowledge_plugins[plugin_name] = plugin_instance
-                logger.info(f"Registered knowledge plugin: {plugin_name} ({plugin_class.__name__})")
+                logger.info(
+                    f"Registered knowledge plugin: {plugin_name} ({plugin_class.__name__})"
+                )
 
             elif isinstance(plugin_instance, BaseMessenger):
                 plugin_name = plugin_instance.name
                 self.messenger_plugins[plugin_name] = plugin_instance
-                logger.info(f"Registered messenger plugin: {plugin_name} ({plugin_class.__name__})")
+                logger.info(
+                    f"Registered messenger plugin: {plugin_name} ({plugin_class.__name__})"
+                )
 
         except Exception as e:
-            logger.error(f"Failed to register plugin {plugin_class.__name__}: {str(e)}", exc_info=True)
+            logger.error(
+                f"Failed to register plugin {plugin_class.__name__}: {str(e)}",
+                exc_info=True,
+            )
 
     def get_metrics_plugin(self, name: Optional[str] = None) -> Optional[BaseMetrics]:
         if name:
@@ -97,14 +106,18 @@ class PluginLoader:
             return next(iter(self.metrics_plugins.values()))
         return None
 
-    def get_knowledge_plugin(self, name: Optional[str] = None) -> Optional[BaseKnowledge]:
+    def get_knowledge_plugin(
+        self, name: Optional[str] = None
+    ) -> Optional[BaseKnowledge]:
         if name:
             return self.knowledge_plugins.get(name)
         elif self.knowledge_plugins:
             return next(iter(self.knowledge_plugins.values()))
         return None
 
-    def get_messenger_plugin(self, name: Optional[str] = None) -> Optional[BaseMessenger]:
+    def get_messenger_plugin(
+        self, name: Optional[str] = None
+    ) -> Optional[BaseMessenger]:
         if name:
             return self.messenger_plugins.get(name)
         elif self.messenger_plugins:

@@ -32,7 +32,9 @@ class Metric(BaseModel):
     labels: Dict[str, str] = Field(
         default_factory=dict, description="Key-value labels for the metric"
     )
-    unit: Optional[str] = Field(None, description="Unit of measurement (e.g., 'bytes', 'seconds')")
+    unit: Optional[str] = Field(
+        None, description="Unit of measurement (e.g., 'bytes', 'seconds')"
+    )
 
     @field_validator("timestamp", mode="before")
     @classmethod
@@ -56,9 +58,15 @@ class Metric(BaseModel):
 class MetricQuery(BaseModel):
 
     query: str = Field(..., description="Metric query string or name")
-    start_time: Optional[datetime] = Field(None, description="Start time for time-range queries")
-    end_time: Optional[datetime] = Field(None, description="End time for time-range queries")
-    provider: Optional[str] = Field(None, description="Specific metrics provider to use")
+    start_time: Optional[datetime] = Field(
+        None, description="Start time for time-range queries"
+    )
+    end_time: Optional[datetime] = Field(
+        None, description="End time for time-range queries"
+    )
+    provider: Optional[str] = Field(
+        None, description="Specific metrics provider to use"
+    )
 
     @field_validator("start_time", "end_time", mode="before")
     @classmethod
@@ -90,7 +98,8 @@ class Incident(BaseModel):
         default=IncidentStatus.OPEN, description="Current incident status"
     )
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="ISO 8601 timestamp when incident was created"
+        default_factory=datetime.utcnow,
+        description="ISO 8601 timestamp when incident was created",
     )
     updated_at: Optional[datetime] = Field(
         None, description="ISO 8601 timestamp when incident was last updated"
@@ -135,7 +144,9 @@ class Incident(BaseModel):
 
 class WebhookPayload(BaseModel):
 
-    event_type: str = Field(..., description="Type of event (e.g., 'incident.created', 'alert.fired')")
+    event_type: str = Field(
+        ..., description="Type of event (e.g., 'incident.created', 'alert.fired')"
+    )
     source: str = Field(..., description="Source system identifier")
     timestamp: datetime = Field(
         default_factory=datetime.utcnow, description="ISO 8601 timestamp of the event"
@@ -170,9 +181,14 @@ class WebhookPayload(BaseModel):
 
 class PagerDutyWebhook(BaseModel):
 
-    event: str = Field(..., description="Event type (e.g., 'incident.triggered', 'incident.acknowledged')")
+    event: str = Field(
+        ...,
+        description="Event type (e.g., 'incident.triggered', 'incident.acknowledged')",
+    )
     incident: Dict[str, Any] = Field(..., description="Incident data from PagerDuty")
-    log_entries: Optional[List[Dict[str, Any]]] = Field(None, description="Log entries related to the incident")
+    log_entries: Optional[List[Dict[str, Any]]] = Field(
+        None, description="Log entries related to the incident"
+    )
     webhook: Optional[Dict[str, Any]] = Field(None, description="Webhook metadata")
 
     class Config:

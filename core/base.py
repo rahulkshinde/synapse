@@ -9,7 +9,10 @@ class BaseMetrics(ABC):
 
     @abstractmethod
     def get_metrics(
-        self, query: str, start_time: Optional[str] = None, end_time: Optional[str] = None
+        self,
+        query: str,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         pass
 

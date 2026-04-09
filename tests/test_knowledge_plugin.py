@@ -39,7 +39,9 @@ class TestDocumentOperations:
 
     def test_upsert_overwrites(self, knowledge):
         knowledge.add_document(doc_id="rb-002", content="Version 1", title="Test")
-        knowledge.add_document(doc_id="rb-002", content="Version 2", title="Test Updated")
+        knowledge.add_document(
+            doc_id="rb-002", content="Version 2", title="Test Updated"
+        )
 
         doc = knowledge.get_by_id("rb-002")
         assert doc is not None
@@ -77,7 +79,9 @@ class TestSearch:
 
     def test_search_with_limit(self, knowledge):
         for i in range(5):
-            knowledge.add_document(doc_id=f"doc-{i}", content=f"Document {i} about SRE", title=f"Doc {i}")
+            knowledge.add_document(
+                doc_id=f"doc-{i}", content=f"Document {i} about SRE", title=f"Doc {i}"
+            )
 
         results = knowledge.search("SRE", limit=2)
         assert len(results) <= 2
@@ -89,9 +93,24 @@ class TestSearch:
 class TestBulkOperations:
     def test_bulk_add(self, knowledge):
         docs = [
-            {"id": "bulk-1", "content": "OOM kill recovery steps", "title": "OOMKill", "category": "runbook"},
-            {"id": "bulk-2", "content": "Certificate expiration handling", "title": "Cert Expiry", "category": "runbook"},
-            {"id": "bulk-3", "content": "Kafka consumer lag troubleshooting", "title": "Kafka Lag", "category": "runbook"},
+            {
+                "id": "bulk-1",
+                "content": "OOM kill recovery steps",
+                "title": "OOMKill",
+                "category": "runbook",
+            },
+            {
+                "id": "bulk-2",
+                "content": "Certificate expiration handling",
+                "title": "Cert Expiry",
+                "category": "runbook",
+            },
+            {
+                "id": "bulk-3",
+                "content": "Kafka consumer lag troubleshooting",
+                "title": "Kafka Lag",
+                "category": "runbook",
+            },
         ]
         count = knowledge.add_documents_bulk(docs)
         assert count == 3

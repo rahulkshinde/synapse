@@ -14,7 +14,9 @@ def security():
 @pytest.fixture
 def security_custom():
     """SecurityMiddleware with a custom pattern."""
-    return SecurityMiddleware(custom_patterns={"duo_internal": r"duo-internal-[a-z0-9]{8}"})
+    return SecurityMiddleware(
+        custom_patterns={"duo_internal": r"duo-internal-[a-z0-9]{8}"}
+    )
 
 
 # ── AWS Credentials ────────────────────────────────────────────

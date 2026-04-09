@@ -15,13 +15,17 @@ logger = logging.getLogger(__name__)
 
 class ExampleSlack(BaseMessenger):
 
-    def __init__(self, bot_token: Optional[str] = None, default_channel: Optional[str] = None):
+    def __init__(
+        self, bot_token: Optional[str] = None, default_channel: Optional[str] = None
+    ):
         token = bot_token or os.getenv("SLACK_BOT_TOKEN")
         if not token:
             raise ValueError("SLACK_BOT_TOKEN environment variable is required")
 
         self.client = WebClient(token=token)
-        self.default_channel = default_channel or os.getenv("SLACK_DEFAULT_CHANNEL", "#incidents")
+        self.default_channel = default_channel or os.getenv(
+            "SLACK_DEFAULT_CHANNEL", "#incidents"
+        )
 
     @property
     def name(self) -> str:
@@ -117,25 +121,31 @@ class ExampleSlack(BaseMessenger):
             ]
 
             if metadata and "incident_id" in metadata:
-                blocks.append({
-                    "type": "section",
-                    "fields": [
-                        {
-                            "type": "mrkdwn",
-                            "text": f"*Incident ID:*\n{metadata['incident_id']}",
-                        },
-                    ],
-                })
+                blocks.append(
+                    {
+                        "type": "section",
+                        "fields": [
+                            {
+                                "type": "mrkdwn",
+                                "text": f"*Incident ID:*\n{metadata['incident_id']}",
+                            },
+                        ],
+                    }
+                )
 
             if metadata and "links" in metadata and metadata["links"]:
-                link_text = "\n".join([f"• <{link}|{link}>" for link in metadata["links"]])
-                blocks.append({
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": f"*Related Links:*\n{link_text}",
-                    },
-                })
+                link_text = "\n".join(
+                    [f"• <{link}|{link}>" for link in metadata["links"]]
+                )
+                blocks.append(
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": f"*Related Links:*\n{link_text}",
+                        },
+                    }
+                )
 
             blocks.append({"type": "divider"})
 

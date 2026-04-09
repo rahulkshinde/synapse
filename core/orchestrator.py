@@ -24,21 +24,34 @@ class MetricsTool(BaseTool):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     name: str = "query_metrics"
-    description: str = "Query metrics from monitoring systems. Use this to fetch current or historical metric data."
+    description: str = (
+        "Query metrics from monitoring systems. Use this to fetch current or historical metric data."
+    )
     metrics_plugin: Any = None
     security: Any = None
 
-    def _run(self, query: str, start_time: Optional[str] = None, end_time: Optional[str] = None) -> str:
+    def _run(
+        self,
+        query: str,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None,
+    ) -> str:
         try:
             metrics = self.metrics_plugin.get_metrics(query, start_time, end_time)
             scrubbed_metrics = self.security.scrub_list(metrics)
             import json
+
             return json.dumps(scrubbed_metrics, indent=2, default=str)
         except Exception as e:
             logger.error(f"Error querying metrics: {str(e)}")
             return f"Error querying metrics: {str(e)}"
 
-    async def _arun(self, query: str, start_time: Optional[str] = None, end_time: Optional[str] = None) -> str:
+    async def _arun(
+        self,
+        query: str,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None,
+    ) -> str:
         return self._run(query, start_time, end_time)
 
 
@@ -47,7 +60,9 @@ class KnowledgeTool(BaseTool):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     name: str = "search_knowledge"
-    description: str = "Search the knowledge base for documentation, runbooks, or troubleshooting guides."
+    description: str = (
+        "Search the knowledge base for documentation, runbooks, or troubleshooting guides."
+    )
     knowledge_plugin: Any = None
     security: Any = None
 
@@ -56,6 +71,7 @@ class KnowledgeTool(BaseTool):
             results = self.knowledge_plugin.search(query, limit=limit)
             scrubbed_results = self.security.scrub_list(results)
             import json
+
             return json.dumps(scrubbed_results, indent=2, default=str)
         except Exception as e:
             logger.error(f"Error searching knowledge: {str(e)}")
@@ -70,7 +86,9 @@ class MessengerTool(BaseTool):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     name: str = "send_alert"
-    description: str = "Send an alert or message to communication channels. Use this to notify teams about incidents or findings."
+    description: str = (
+        "Send an alert or message to communication channels. Use this to notify teams about incidents or findings."
+    )
     messenger_plugin: Any = None
     security: Any = None
 
@@ -84,6 +102,7 @@ class MessengerTool(BaseTool):
     ) -> str:
         try:
             import json
+
             meta_dict = json.loads(metadata) if metadata else {}
             scrubbed_meta = self.security.scrub_dict(meta_dict)
             scrubbed_desc = self.security.scrub(description)
@@ -138,17 +157,23 @@ class Orchestrator:
     def _build_tools(self):
         metrics_plugin = self.plugin_loader.get_metrics_plugin()
         if metrics_plugin:
-            self.tools.append(MetricsTool(metrics_plugin=metrics_plugin, security=self.security))
+            self.tools.append(
+                MetricsTool(metrics_plugin=metrics_plugin, security=self.security)
+            )
             logger.info("Added metrics tool to agent")
 
         knowledge_plugin = self.plugin_loader.get_knowledge_plugin()
         if knowledge_plugin:
-            self.tools.append(KnowledgeTool(knowledge_plugin=knowledge_plugin, security=self.security))
+            self.tools.append(
+                KnowledgeTool(knowledge_plugin=knowledge_plugin, security=self.security)
+            )
             logger.info("Added knowledge tool to agent")
 
         messenger_plugin = self.plugin_loader.get_messenger_plugin()
         if messenger_plugin:
-            self.tools.append(MessengerTool(messenger_plugin=messenger_plugin, security=self.security))
+            self.tools.append(
+                MessengerTool(messenger_plugin=messenger_plugin, security=self.security)
+            )
             logger.info("Added messenger tool to agent")
 
         if not self.tools:
@@ -207,7 +232,9 @@ Please:
             start_ts = time.monotonic()
             result = await self.agent.ainvoke({"input": query, "chat_history": []})
             elapsed = time.monotonic() - start_ts
-            self._audit_log("incident", query, result.get("output", ""), elapsed, severity)
+            self._audit_log(
+                "incident", query, result.get("output", ""), elapsed, severity
+            )
             return {
                 "status": "processed",
                 "response": result.get("output", ""),
@@ -226,7 +253,9 @@ Please:
 
         try:
             start_ts = time.monotonic()
-            result = await self.agent.ainvoke({"input": scrubbed_query, "chat_history": []})
+            result = await self.agent.ainvoke(
+                {"input": scrubbed_query, "chat_history": []}
+            )
             elapsed = time.monotonic() - start_ts
             self._audit_log("query", scrubbed_query, result.get("output", ""), elapsed)
             return {
