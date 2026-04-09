@@ -6,14 +6,13 @@ uvicorn[standard]>=0.24.0
 pydantic>=2.5.0
 
 # LangChain & RAG
-langchain>=0.1.0
-langchain-community>=0.0.20
-langchain-core>=0.1.0
-chromadb>=0.4.0
-langchain-chroma>=0.1.0
+langchain>=0.3.0,<0.4.0
+langchain-community>=0.3.0,<0.4.0
+langchain-core>=0.3.0,<0.4.0
+chromadb>=0.4.0,<2.0.0
 
 # LLM Integration (Local Inference)
-langchain-ollama>=0.1.0
+langchain-ollama>=0.3.0,<0.4.0
 
 # Configuration
 pyyaml>=6.0
