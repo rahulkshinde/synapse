@@ -114,9 +114,9 @@ def seed_knowledge(
             title = results["metadatas"][0][i].get("title", "?")
             dist = results["distances"][0][i] if results["distances"] else "?"
             logger.info(
-                f"  #{i+1}: {title} (distance={dist:.4f})"
+                f"  #{i + 1}: {title} (distance={dist:.4f})"
                 if isinstance(dist, float)
-                else f"  #{i+1}: {title}"
+                else f"  #{i + 1}: {title}"
             )
     else:
         logger.warning("  No results returned — check ChromaDB embedding model")

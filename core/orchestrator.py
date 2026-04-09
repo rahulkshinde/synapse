@@ -20,13 +20,10 @@ logger = logging.getLogger(__name__)
 
 
 class MetricsTool(BaseTool):
-
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     name: str = "query_metrics"
-    description: str = (
-        "Query metrics from monitoring systems. Use this to fetch current or historical metric data."
-    )
+    description: str = "Query metrics from monitoring systems. Use this to fetch current or historical metric data."
     metrics_plugin: Any = None
     security: Any = None
 
@@ -56,13 +53,10 @@ class MetricsTool(BaseTool):
 
 
 class KnowledgeTool(BaseTool):
-
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     name: str = "search_knowledge"
-    description: str = (
-        "Search the knowledge base for documentation, runbooks, or troubleshooting guides."
-    )
+    description: str = "Search the knowledge base for documentation, runbooks, or troubleshooting guides."
     knowledge_plugin: Any = None
     security: Any = None
 
@@ -82,13 +76,10 @@ class KnowledgeTool(BaseTool):
 
 
 class MessengerTool(BaseTool):
-
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     name: str = "send_alert"
-    description: str = (
-        "Send an alert or message to communication channels. Use this to notify teams about incidents or findings."
-    )
+    description: str = "Send an alert or message to communication channels. Use this to notify teams about incidents or findings."
     messenger_plugin: Any = None
     security: Any = None
 
@@ -138,7 +129,6 @@ class MessengerTool(BaseTool):
 
 
 class Orchestrator:
-
     def __init__(
         self,
         plugin_loader: PluginLoader,

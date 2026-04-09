@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 
 
 class ChromaDBKnowledge(BaseKnowledge):
-
     def __init__(
         self,
         host: Optional[str] = None,

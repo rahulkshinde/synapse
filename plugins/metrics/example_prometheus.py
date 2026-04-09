@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 
 
 class ExamplePrometheus(BaseMetrics):
-
     def __init__(self, base_url: Optional[str] = None, timeout: int = 30):
         self.base_url = (
             base_url or os.getenv("PROMETHEUS_URL", "http://localhost:9090")

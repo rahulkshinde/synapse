@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 
 
 class PluginLoader:
-
     def __init__(self, plugins_dir: str = "plugins"):
         self.plugins_dir = Path(plugins_dir)
         self.metrics_plugins: Dict[str, BaseMetrics] = {}

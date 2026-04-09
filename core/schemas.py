@@ -8,7 +8,6 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class Severity(str, Enum):
-
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
@@ -17,7 +16,6 @@ class Severity(str, Enum):
 
 
 class IncidentStatus(str, Enum):
-
     OPEN = "open"
     INVESTIGATING = "investigating"
     RESOLVED = "resolved"
@@ -25,7 +23,6 @@ class IncidentStatus(str, Enum):
 
 
 class Metric(BaseModel):
-
     name: str = Field(..., description="Metric name/identifier")
     value: float = Field(..., description="Numeric metric value")
     timestamp: datetime = Field(..., description="ISO 8601 timestamp of the metric")
@@ -56,7 +53,6 @@ class Metric(BaseModel):
 
 
 class MetricQuery(BaseModel):
-
     query: str = Field(..., description="Metric query string or name")
     start_time: Optional[datetime] = Field(
         None, description="Start time for time-range queries"
@@ -89,7 +85,6 @@ class MetricQuery(BaseModel):
 
 
 class Incident(BaseModel):
-
     id: Optional[str] = Field(None, description="Unique incident identifier")
     title: str = Field(..., min_length=1, description="Incident title")
     description: str = Field(..., description="Detailed incident description")
@@ -143,7 +138,6 @@ class Incident(BaseModel):
 
 
 class WebhookPayload(BaseModel):
-
     event_type: str = Field(
         ..., description="Type of event (e.g., 'incident.created', 'alert.fired')"
     )
@@ -180,7 +174,6 @@ class WebhookPayload(BaseModel):
 
 
 class PagerDutyWebhook(BaseModel):
-
     event: str = Field(
         ...,
         description="Event type (e.g., 'incident.triggered', 'incident.acknowledged')",

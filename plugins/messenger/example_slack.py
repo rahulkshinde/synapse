@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 
 
 class ExampleSlack(BaseMessenger):
-
     def __init__(
         self, bot_token: Optional[str] = None, default_channel: Optional[str] = None
     ):

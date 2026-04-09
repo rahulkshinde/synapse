@@ -8,7 +8,6 @@ logger = logging.getLogger(__name__)
 
 
 class SecurityMiddleware:
-
     PATTERNS = {
         "api_key": re.compile(
             r"(?i)(api[_-]?key|apikey)\s*[:=]\s*([a-zA-Z0-9_\-]{20,})", re.MULTILINE
