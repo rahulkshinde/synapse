@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class Severity(str, Enum):
@@ -40,8 +40,8 @@ class Metric(BaseModel):
             return datetime.fromisoformat(v.replace("Z", "+00:00"))
         return v
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "name": "cpu_usage_percent",
                 "value": 85.5,
@@ -50,6 +50,7 @@ class Metric(BaseModel):
                 "unit": "percent",
             }
         }
+    )
 
 
 class MetricQuery(BaseModel):
@@ -73,8 +74,8 @@ class MetricQuery(BaseModel):
             return datetime.fromisoformat(v.replace("Z", "+00:00"))
         return v
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "query": "cpu_usage_percent",
                 "start_time": "2026-02-20T10:00:00Z",
@@ -82,6 +83,7 @@ class MetricQuery(BaseModel):
                 "provider": "prometheus",
             }
         }
+    )
 
 
 class Incident(BaseModel):
@@ -121,8 +123,8 @@ class Incident(BaseModel):
             return datetime.fromisoformat(v.replace("Z", "+00:00"))
         return v
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": "inc-2026-001",
                 "title": "High CPU Usage on Web Servers",
@@ -135,6 +137,7 @@ class Incident(BaseModel):
                 "metadata": {"alert_source": "prometheus"},
             }
         }
+    )
 
 
 class WebhookPayload(BaseModel):
@@ -157,8 +160,8 @@ class WebhookPayload(BaseModel):
             return datetime.fromisoformat(v.replace("Z", "+00:00"))
         return v
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "event_type": "incident.created",
                 "source": "pagerduty",
@@ -171,6 +174,7 @@ class WebhookPayload(BaseModel):
                 "metadata": {"webhook_id": "wh-12345"},
             }
         }
+    )
 
 
 class PagerDutyWebhook(BaseModel):
@@ -184,8 +188,8 @@ class PagerDutyWebhook(BaseModel):
     )
     webhook: Optional[Dict[str, Any]] = Field(None, description="Webhook metadata")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "event": "incident.triggered",
                 "incident": {
@@ -205,3 +209,4 @@ class PagerDutyWebhook(BaseModel):
                 },
             }
         }
+    )
