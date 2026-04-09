@@ -9,12 +9,10 @@ from typing import Any, Dict, List, Optional
 
 from langchain.agents import AgentExecutor, create_openai_functions_agent
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.tools import BaseTool
 from langchain_ollama import ChatOllama
 from pydantic import ConfigDict
 
-from core.base import BaseKnowledge, BaseMessenger, BaseMetrics
 from core.plugin_loader import PluginLoader
 from core.security import SecurityMiddleware
 

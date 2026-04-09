@@ -25,7 +25,7 @@ def check_health(base_url: str) -> bool:
         resp.raise_for_status()
         health = resp.json()
         print(f"  Status:  {health['status']}")
-        print(f"  Plugins:")
+        print("  Plugins:")
         for ptype, names in health.get("plugins", {}).items():
             status = ", ".join(names) if names else "(none)"
             print(f"    {ptype:12s} → {status}")
@@ -36,7 +36,7 @@ def check_health(base_url: str) -> bool:
         return health["status"] == "healthy"
     except requests.exceptions.ConnectionError:
         print(f"  ❌ Cannot reach Synapse at {base_url}")
-        print(f"     Start the stack: docker compose up -d")
+        print("     Start the stack: docker compose up -d")
         return False
     except Exception as e:
         print(f"  ❌ Health check failed: {e}")
@@ -94,7 +94,7 @@ def send_pagerduty_incident(base_url: str) -> dict:
         print(f"  ✅ Response received in {elapsed:.1f}s")
         return result
     except requests.exceptions.Timeout:
-        print(f"  ⚠️  Request timed out (LLM may need more time or a smaller model)")
+        print("  ⚠️  Request timed out (LLM may need more time or a smaller model)")
         return {"status": "timeout"}
     except Exception as e:
         print(f"  ❌ Error: {e}")

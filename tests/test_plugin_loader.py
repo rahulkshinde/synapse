@@ -2,7 +2,7 @@
 
 import pytest
 
-from core.base import BaseKnowledge, BaseMessenger, BaseMetrics
+from core.base import BaseMetrics
 from core.plugin_loader import PluginLoader
 
 

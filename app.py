@@ -7,11 +7,9 @@ from typing import Any, Dict, List
 import yaml
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-
 from core.orchestrator import Orchestrator
 from core.plugin_loader import PluginLoader
-from core.schemas import Incident, MetricQuery, PagerDutyWebhook, Severity, WebhookPayload
+from core.schemas import Incident, MetricQuery, PagerDutyWebhook, WebhookPayload
 from core.security import SecurityMiddleware
 
 logging.basicConfig(

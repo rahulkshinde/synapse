@@ -63,31 +63,24 @@ The agent dynamically selects tools — query metrics, search knowledge base, se
 
 ## How It Works
 
-```text
-Alert fires (PagerDuty, webhook, /incidents API)
-        │
-        ▼
-   Synapse receives event
-        │
-        ▼
-   SecurityMiddleware scrubs PII & secrets
-        │
-        ▼
-   LangChain agent selects tools
-        │
-        ├── Queries Prometheus for related metrics
-        ├── Searches ChromaDB knowledge base (RAG)
-        └── Correlates data across plugins
-                │
-                ▼
-   Local LLM generates analysis (Ollama)
-        │
-        ├── Root cause identification
-        ├── Remediation recommendations
-        └── Structured response with context
-                │
-                ▼
-   Alert posted to Slack with analysis
+```mermaid
+flowchart TD
+    A["Alert fires\n(PagerDuty · webhook · /incidents API)"] --> B["Synapse receives event"]
+    B --> C["SecurityMiddleware\nscrubs PII & secrets"]
+    C --> D["LangChain agent selects tools"]
+    D --> E["Query Prometheus metrics"]
+    D --> F["Search ChromaDB knowledge base"]
+    D --> G["Correlate data across plugins"]
+    E --> H["Local LLM generates analysis\n(Ollama — zero egress)"]
+    F --> H
+    G --> H
+    H --> I["Root cause & remediation"]
+    I --> J["Alert posted to Slack"]
+
+    style A fill:#ef4444,color:#fff,stroke:#b91c1c
+    style C fill:#f59e0b,color:#fff,stroke:#d97706
+    style H fill:#10b981,color:#fff,stroke:#059669
+    style J fill:#6366f1,color:#fff,stroke:#4f46e5
 ```
 
 ---

@@ -85,15 +85,6 @@ class ExampleSlack(BaseMessenger):
             if not channel:
                 raise ValueError("No channel specified and no default channel set")
 
-            severity_colors = {
-                "critical": "#FF0000",
-                "high": "#FF6B00",
-                "medium": "#FFA500",
-                "low": "#FFD700",
-                "info": "#36A2EB",
-            }
-            color = (metadata or {}).get("color", severity_colors.get(severity.lower(), "#808080"))
-
             blocks = [
                 {
                     "type": "header",
