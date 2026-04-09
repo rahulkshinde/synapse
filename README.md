@@ -22,9 +22,16 @@
 
 ---
 
-Synapse is an open-source (Apache 2.0) AI-powered SRE assistant that runs **entirely inside your VPC**. When a PagerDuty alert fires, Synapse's LangChain-orchestrated agent queries Prometheus for metrics, searches ChromaDB for matching runbooks, generates a root cause analysis via a **local Ollama LLM**, and posts remediation steps to Slack — all without a single byte leaving your network.
+**TL;DR** — Open-source AI SRE assistant that never phones home.
 
-Unlike hosted AI copilots that send your incident data to third-party APIs, Synapse keeps **everything local**. Zero inference cost. Zero data egress. Zero vendor lock-in.
+- **Alert comes in** (PagerDuty, webhook, API) → agent investigates autonomously
+- **Queries Prometheus** for correlated metrics
+- **Searches ChromaDB** for matching runbooks & past incidents
+- **Generates root cause analysis** via a local Ollama LLM — no OpenAI, no API keys
+- **Posts remediation to Slack** with full context
+- **Zero inference cost** — Ollama runs on your hardware
+- **Zero data egress** — not a single byte leaves your VPC
+- **Zero vendor lock-in** — Apache 2.0, swap any component
 
 ---
 
@@ -61,26 +68,73 @@ The agent dynamically selects tools — query metrics, search knowledge base, se
 
 ---
 
-## How It Works
+## Architecture
 
 ```mermaid
-flowchart TD
-    A["Alert fires\n(PagerDuty · webhook · /incidents API)"] --> B["Synapse receives event"]
-    B --> C["SecurityMiddleware\nscrubs PII & secrets"]
-    C --> D["LangChain agent selects tools"]
-    D --> E["Query Prometheus metrics"]
-    D --> F["Search ChromaDB knowledge base"]
-    D --> G["Correlate data across plugins"]
-    E --> H["Local LLM generates analysis\n(Ollama — zero egress)"]
-    F --> H
-    G --> H
-    H --> I["Root cause & remediation"]
-    I --> J["Alert posted to Slack"]
+flowchart LR
+    subgraph EXTERNAL["External Sources"]
+        PD["PagerDuty\nWebhooks"]
+        WH["Generic\nWebhooks"]
+        API["REST API\n/incidents · /query"]
+    end
 
-    style A fill:#ef4444,color:#fff,stroke:#b91c1c
-    style C fill:#f59e0b,color:#fff,stroke:#d97706
-    style H fill:#10b981,color:#fff,stroke:#059669
-    style J fill:#6366f1,color:#fff,stroke:#4f46e5
+    subgraph VPC["Your VPC — nothing leaves this boundary"]
+        direction TB
+
+        subgraph CORE["Synapse Core"]
+            direction TB
+            GW["FastAPI Gateway\nport 8000"]
+            SEC["SecurityMiddleware\nPII & secret scrubbing"]
+            AGENT["LangChain Agent\ntool selection & orchestration"]
+            GW --> SEC --> AGENT
+        end
+
+        subgraph INFRA["Monitoring"]
+            PROM["Prometheus\nport 9090"]
+            NODE["Node Exporter\nport 9100"]
+            NODE -.->|host metrics| PROM
+        end
+
+        subgraph DATA["Data Stores"]
+            CHROMA["ChromaDB\nrunbooks · postmortems\nport 8001"]
+        end
+
+        subgraph LLM["Local Inference — zero egress"]
+            OLLAMA["Ollama\nllama3 · mistral · any GGUF\nport 11434"]
+        end
+
+        AGENT -->|PromQL queries| PROM
+        AGENT -->|semantic search| CHROMA
+        AGENT -->|scrubbed prompt| OLLAMA
+        OLLAMA -->|analysis| AGENT
+    end
+
+    subgraph OUTPUT["Output Channels"]
+        SLACK["Slack\n#incidents"]
+    end
+
+    PD -->|alert| GW
+    WH -->|event| GW
+    API -->|request| GW
+    AGENT -->|remediation alert| SLACK
+
+    classDef external fill:#1e293b,color:#e2e8f0,stroke:#475569,stroke-width:1px
+    classDef core fill:#0f172a,color:#38bdf8,stroke:#0ea5e9,stroke-width:2px
+    classDef security fill:#f59e0b,color:#000,stroke:#d97706,stroke-width:2px
+    classDef agent fill:#8b5cf6,color:#fff,stroke:#7c3aed,stroke-width:2px
+    classDef infra fill:#06b6d4,color:#000,stroke:#0891b2,stroke-width:1px
+    classDef data fill:#10b981,color:#000,stroke:#059669,stroke-width:1px
+    classDef llm fill:#ec4899,color:#fff,stroke:#db2777,stroke-width:2px
+    classDef output fill:#6366f1,color:#fff,stroke:#4f46e5,stroke-width:1px
+
+    class PD,WH,API external
+    class GW core
+    class SEC security
+    class AGENT agent
+    class PROM,NODE infra
+    class CHROMA data
+    class OLLAMA llm
+    class SLACK output
 ```
 
 ---
