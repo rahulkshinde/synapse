@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "synapse.fullname" . }}
+  labels:
+    {{- include "synapse.labels" . | nindent 4 }}
+    app.kubernetes.io/component: synapse
+spec:
+  replicas: {{ .Values.synapse.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "synapse.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: synapse
+  template:
+    metadata:
+      labels:
+        {{- include "synapse.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: synapse
+    spec:
+      serviceAccountName: {{ include "synapse.serviceAccountName" . }}
+      containers:
+        - name: synapse
+          image: "{{ .Values.synapse.image.repository }}:{{ include "synapse.imageTag" . }}"
+          imagePullPolicy: {{ .Values.synapse.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            - name: OLLAMA_HOST
+              value: {{ include "synapse.ollamaUrl" . | quote }}
+            - name: CHROMA_HOST
+              value: {{ include "synapse.chromaHost" . | quote }}
+            - name: CHROMA_PORT
+              value: {{ .Values.chromadb.service.port | quote }}
+            - name: PROMETHEUS_URL
+              value: {{ include "synapse.prometheusUrl" . | quote }}
+            {{- if .Values.synapse.env.SLACK_BOT_TOKEN }}
+            - name: SLACK_BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "synapse.fullname" . }}-secrets
+                  key: slack-bot-token
+            {{- end }}
+            - name: SLACK_DEFAULT_CHANNEL
+              value: {{ .Values.synapse.env.SLACK_DEFAULT_CHANNEL | quote }}
+            {{- range $key, $value := .Values.synapse.extraEnv }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            {{- toYaml .Values.synapse.resources | nindent 12 }}

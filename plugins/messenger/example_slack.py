@@ -1,9 +1,4 @@
-"""Example Slack messenger plugin implementation.
-
-This plugin demonstrates how to implement the BaseMessenger interface
-for sending messages and alerts via Slack Bolt. It can be used as a
-template for creating other messenger plugins.
-"""
+"""Slack messenger plugin."""
 
 import logging
 import os
@@ -19,20 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 class ExampleSlack(BaseMessenger):
-    """Slack implementation of BaseMessenger.
-    
-    Uses Slack Web API to send messages and alerts to Slack channels.
-    This plugin is automatically discovered and loaded when placed in
-    the plugins/messenger/ directory.
-    """
 
     def __init__(self, bot_token: Optional[str] = None, default_channel: Optional[str] = None):
-        """Initialize the Slack messenger plugin.
-        
-        Args:
-            bot_token: Slack bot token (defaults to SLACK_BOT_TOKEN env var)
-            default_channel: Default channel (defaults to SLACK_DEFAULT_CHANNEL env var)
-        """
         token = bot_token or os.getenv("SLACK_BOT_TOKEN")
         if not token:
             raise ValueError("SLACK_BOT_TOKEN environment variable is required")
@@ -42,7 +25,6 @@ class ExampleSlack(BaseMessenger):
 
     @property
     def name(self) -> str:
-        """Return the plugin name."""
         return "slack"
 
     def send_message(
@@ -51,7 +33,6 @@ class ExampleSlack(BaseMessenger):
         message: str,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        """Send a message to a Slack channel."""
         try:
             if not channel.startswith("#") and not channel.startswith("C"):
                 channel = f"#{channel}"
@@ -99,7 +80,6 @@ class ExampleSlack(BaseMessenger):
         description: str,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        """Send an alert/incident notification to Slack."""
         try:
             channel = (metadata or {}).get("channel", self.default_channel)
             if not channel:
@@ -198,7 +178,6 @@ class ExampleSlack(BaseMessenger):
             }
 
     def health_check(self) -> bool:
-        """Check if Slack API is healthy and reachable."""
         try:
             response = self.client.auth_test()
             return response["ok"]

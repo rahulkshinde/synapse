@@ -1,9 +1,4 @@
-"""FastAPI application entry point for Synapse SRE Framework.
-
-This module provides the main API endpoints for the private-first, VPC-ready
-SRE assistant framework. All data is scrubbed through SecurityMiddleware before
-being sent to the local LLM.
-"""
+"""Synapse API. All data is scrubbed before reaching the LLM."""
 
 import logging
 import os
@@ -19,14 +14,12 @@ from core.plugin_loader import PluginLoader
 from core.schemas import Incident, MetricQuery, PagerDutyWebhook, Severity, WebhookPayload
 from core.security import SecurityMiddleware
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
 
-# Load configuration
 config_path = os.getenv("CONFIG_PATH", "config.yaml")
 config = {}
 if os.path.exists(config_path):
@@ -35,7 +28,6 @@ if os.path.exists(config_path):
 else:
     logger.warning(f"Config file {config_path} not found, using defaults")
 
-# Initialize components
 security = SecurityMiddleware(
     custom_patterns=config.get("security", {}).get("custom_patterns", {})
 )
@@ -50,7 +42,6 @@ orchestrator = Orchestrator(
     model_name=llm_config.get("model", "llama3.1"),
 )
 
-# Initialize FastAPI app
 app_config = config.get("app", {})
 app = FastAPI(
     title="Synapse SRE Framework",
@@ -59,7 +50,6 @@ app = FastAPI(
     debug=app_config.get("debug", False),
 )
 
-# Add CORS middleware if needed (disabled by default for VPC deployment)
 if app_config.get("cors_enabled", False):
     app.add_middleware(
         CORSMiddleware,
@@ -72,16 +62,12 @@ if app_config.get("cors_enabled", False):
 
 @app.middleware("http")
 async def security_middleware(request: Request, call_next):
-    """Middleware to scrub sensitive data from request/response."""
-    # Note: In production, you may want to scrub request bodies
-    # For now, we rely on the orchestrator to scrub data before LLM processing
     response = await call_next(request)
     return response
 
 
 @app.get("/")
 async def root() -> Dict[str, str]:
-    """Root endpoint providing API information."""
     return {
         "name": "Synapse SRE Framework",
         "version": "0.2.0",
@@ -93,7 +79,6 @@ async def root() -> Dict[str, str]:
 
 @app.get("/health")
 async def health_check() -> Dict[str, Any]:
-    """Health check endpoint with plugin status."""
     health = {
         "status": "healthy",
         "plugins": {
@@ -103,7 +88,6 @@ async def health_check() -> Dict[str, Any]:
         },
     }
 
-    # Check plugin health
     plugin_health = {}
     for name, plugin in plugin_loader.metrics_plugins.items():
         plugin_health[f"metrics.{name}"] = plugin.health_check()
@@ -118,17 +102,11 @@ async def health_check() -> Dict[str, Any]:
 
 @app.post("/webhook", status_code=status.HTTP_202_ACCEPTED)
 async def receive_webhook(payload: WebhookPayload) -> Dict[str, Any]:
-    """Generic webhook receiver endpoint.
-    
-    This endpoint accepts webhook payloads from external systems and processes
-    them through the orchestrator with privacy scrubbing.
-    """
     logger.info(
         f"Received webhook: event_type={payload.event_type}, source={payload.source}"
     )
 
     try:
-        # Process through orchestrator
         result = await orchestrator.query(
             f"Process webhook event: {payload.event_type} from {payload.source}. "
             f"Data: {payload.data}"
@@ -151,11 +129,6 @@ async def receive_webhook(payload: WebhookPayload) -> Dict[str, Any]:
 
 @app.post("/incident", status_code=status.HTTP_202_ACCEPTED)
 async def handle_pagerduty_incident(webhook: PagerDutyWebhook) -> Dict[str, Any]:
-    """Handle PagerDuty webhook for incident events.
-    
-    This endpoint processes PagerDuty incidents through the orchestrator,
-    which will query metrics, search knowledge base, and send alerts.
-    """
     logger.info(
         f"Received PagerDuty webhook: event={webhook.event}, incident_id={webhook.incident.get('id')}"
     )
@@ -190,11 +163,9 @@ async def handle_pagerduty_incident(webhook: PagerDutyWebhook) -> Dict[str, Any]
 
 @app.post("/incidents", status_code=status.HTTP_201_CREATED)
 async def create_incident(incident: Incident) -> Dict[str, Any]:
-    """Create a new incident and process through orchestrator."""
     logger.info(f"Creating incident: {incident.title}")
 
     try:
-        # Process through orchestrator
         result = await orchestrator.process_incident(
             incident_title=incident.title,
             incident_description=incident.description,
@@ -216,11 +187,6 @@ async def create_incident(incident: Incident) -> Dict[str, Any]:
 
 @app.post("/query", status_code=status.HTTP_200_OK)
 async def query_assistant(query: str) -> Dict[str, Any]:
-    """Query the SRE assistant using natural language.
-    
-    The assistant will use available plugins to answer questions,
-    query metrics, search knowledge, and send alerts as needed.
-    """
     try:
         result = await orchestrator.query(query)
         return result
@@ -234,7 +200,6 @@ async def query_assistant(query: str) -> Dict[str, Any]:
 
 @app.post("/metrics/query")
 async def query_metrics(query: MetricQuery) -> Dict[str, Any]:
-    """Query metrics from configured plugins."""
     logger.info(f"Querying metrics: {query.query}")
 
     try:
@@ -260,7 +225,6 @@ async def query_metrics(query: MetricQuery) -> Dict[str, Any]:
             end_time=end_time_str,
         )
 
-        # Scrub metrics before returning
         scrubbed_metrics = security.scrub_list(metrics)
 
         return {
@@ -281,11 +245,6 @@ async def query_metrics(query: MetricQuery) -> Dict[str, Any]:
 
 @app.get("/plugins")
 async def list_plugins() -> Dict[str, List[str]]:
-    """List all discovered and loaded plugins.
-    
-    This endpoint shows which plugins were automatically discovered
-    from the /plugins directory.
-    """
     return {
         "metrics": plugin_loader.list_metrics_plugins(),
         "knowledge": plugin_loader.list_knowledge_plugins(),

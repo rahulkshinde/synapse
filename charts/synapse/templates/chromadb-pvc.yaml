@@ -1,0 +1,18 @@
+{{- if and .Values.chromadb.enabled .Values.chromadb.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "synapse.fullname" . }}-chromadb
+  labels:
+    {{- include "synapse.labels" . | nindent 4 }}
+    app.kubernetes.io/component: chromadb
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- if .Values.chromadb.persistence.storageClass }}
+  storageClassName: {{ .Values.chromadb.persistence.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.chromadb.persistence.size }}
+{{- end }}

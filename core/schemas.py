@@ -1,8 +1,4 @@
-"""Pydantic v2 models for data validation and serialization.
-
-This module defines all structured data models used throughout the Synapse
-SRE Assistant, ensuring type safety and data validation at API boundaries.
-"""
+"""Pydantic models for API request/response validation."""
 
 from datetime import datetime
 from enum import Enum
@@ -12,7 +8,6 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class Severity(str, Enum):
-    """Incident severity levels."""
 
     CRITICAL = "critical"
     HIGH = "high"
@@ -22,7 +17,6 @@ class Severity(str, Enum):
 
 
 class IncidentStatus(str, Enum):
-    """Incident status values."""
 
     OPEN = "open"
     INVESTIGATING = "investigating"
@@ -31,7 +25,6 @@ class IncidentStatus(str, Enum):
 
 
 class Metric(BaseModel):
-    """Represents a single metric data point."""
 
     name: str = Field(..., description="Metric name/identifier")
     value: float = Field(..., description="Numeric metric value")
@@ -44,7 +37,6 @@ class Metric(BaseModel):
     @field_validator("timestamp", mode="before")
     @classmethod
     def parse_timestamp(cls, v: Any) -> datetime:
-        """Parse timestamp from string if needed."""
         if isinstance(v, str):
             return datetime.fromisoformat(v.replace("Z", "+00:00"))
         return v
@@ -62,7 +54,6 @@ class Metric(BaseModel):
 
 
 class MetricQuery(BaseModel):
-    """Query parameters for retrieving metrics."""
 
     query: str = Field(..., description="Metric query string or name")
     start_time: Optional[datetime] = Field(None, description="Start time for time-range queries")
@@ -72,7 +63,6 @@ class MetricQuery(BaseModel):
     @field_validator("start_time", "end_time", mode="before")
     @classmethod
     def parse_datetime(cls, v: Any) -> Optional[datetime]:
-        """Parse datetime from string if needed."""
         if v is None or isinstance(v, datetime):
             return v
         if isinstance(v, str):
@@ -91,7 +81,6 @@ class MetricQuery(BaseModel):
 
 
 class Incident(BaseModel):
-    """Represents an SRE incident."""
 
     id: Optional[str] = Field(None, description="Unique incident identifier")
     title: str = Field(..., min_length=1, description="Incident title")
@@ -122,7 +111,6 @@ class Incident(BaseModel):
     @field_validator("created_at", "updated_at", "resolved_at", mode="before")
     @classmethod
     def parse_datetime(cls, v: Any) -> Optional[datetime]:
-        """Parse datetime from string if needed."""
         if v is None or isinstance(v, datetime):
             return v
         if isinstance(v, str):
@@ -146,7 +134,6 @@ class Incident(BaseModel):
 
 
 class WebhookPayload(BaseModel):
-    """Generic webhook payload structure for receiving external events."""
 
     event_type: str = Field(..., description="Type of event (e.g., 'incident.created', 'alert.fired')")
     source: str = Field(..., description="Source system identifier")
@@ -161,7 +148,6 @@ class WebhookPayload(BaseModel):
     @field_validator("timestamp", mode="before")
     @classmethod
     def parse_timestamp(cls, v: Any) -> datetime:
-        """Parse timestamp from string if needed."""
         if isinstance(v, str):
             return datetime.fromisoformat(v.replace("Z", "+00:00"))
         return v
@@ -183,11 +169,6 @@ class WebhookPayload(BaseModel):
 
 
 class PagerDutyWebhook(BaseModel):
-    """PagerDuty webhook payload structure.
-    
-    PagerDuty sends webhooks with a specific structure. This model handles
-    the common webhook format for incident events.
-    """
 
     event: str = Field(..., description="Event type (e.g., 'incident.triggered', 'incident.acknowledged')")
     incident: Dict[str, Any] = Field(..., description="Incident data from PagerDuty")

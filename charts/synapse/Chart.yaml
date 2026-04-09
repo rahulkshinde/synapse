@@ -1,0 +1,20 @@
+apiVersion: v2
+name: synapse
+description: Privacy-first AI SRE Assistant with plugin architecture — local LLM inference, RAG knowledge base, and multi-system integration
+type: application
+version: 0.1.0
+appVersion: "0.2.0"
+home: https://github.com/rahulkshinde/synapse
+sources:
+  - https://github.com/rahulkshinde/synapse
+keywords:
+  - sre
+  - ai
+  - llm
+  - incident-response
+  - observability
+  - rag
+  - privacy
+maintainers:
+  - name: Rahul Shinde
+    url: https://github.com/rahulkshinde

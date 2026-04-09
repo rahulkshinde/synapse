@@ -1,0 +1,35 @@
+🚀 Synapse SRE Assistant has been deployed!
+
+───────────────────────────────────────────────────
+
+1. Get the Synapse API URL:
+{{- if eq .Values.synapse.service.type "ClusterIP" }}
+  kubectl port-forward svc/{{ include "synapse.fullname" . }} 8000:{{ .Values.synapse.service.port }}
+  echo "Synapse API: http://localhost:8000"
+{{- else }}
+  export SYNAPSE_URL=$(kubectl get svc {{ include "synapse.fullname" . }} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'):{{ .Values.synapse.service.port }}
+  echo "Synapse API: http://$SYNAPSE_URL"
+{{- end }}
+
+2. Verify health:
+  curl http://localhost:8000/health | jq .
+
+3. Seed the knowledge base with SRE runbooks:
+  kubectl exec -it deploy/{{ include "synapse.fullname" . }} -- \
+    python seed_knowledge.py --host {{ include "synapse.chromaHost" . }} --port {{ .Values.chromadb.service.port }}
+
+4. Send a test incident:
+  curl -X POST http://localhost:8000/incident \
+    -H "Content-Type: application/json" \
+    -d '{"event":"incident.triggered","incident":{"id":"TEST-1","title":"High CPU on web-api","description":"CPU at 92%","severity":"high"}}'
+
+5. View loaded plugins:
+  curl http://localhost:8000/plugins | jq .
+
+{{- if .Values.networkPolicy.enabled }}
+
+🔒 Network Policy is ENABLED — Ollama has no egress (VPC-private mode).
+{{- end }}
+
+───────────────────────────────────────────────────
+Docs: https://github.com/rahulkshinde/synapse

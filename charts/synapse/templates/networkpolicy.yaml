@@ -1,0 +1,35 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "synapse.fullname" . }}-ollama-no-egress
+  labels:
+    {{- include "synapse.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ollama
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "synapse.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: ollama
+  policyTypes:
+    - Egress
+    - Ingress
+  ingress:
+    # Allow inbound only from Synapse app pods
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "synapse.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: synapse
+      ports:
+        - protocol: TCP
+          port: 11434
+  egress:
+    # Allow DNS resolution only — no external network access
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+{{- end }}
