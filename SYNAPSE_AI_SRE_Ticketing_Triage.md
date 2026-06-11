@@ -24,40 +24,101 @@
 ---
 
 ## Support Ticketing Deflection System
-- Entry points: Zendesk, Jira/JSM, OpenAI Support page, and email/web widget → queue → webhook to bot
-- LLM steps: classify intent, extract entities (product, error, tenant), summarize ticket
-- Retrieval: ground with KB/runbooks; detect “known issue” banners; propose resolution
-- Deflection paths: instant answers, guided flows/forms, similar tickets; escalate with summary if confidence low
-- Feedback loop: thumbs up/down → eval dataset → weekly prompt/tool retraining
+- **Entry points:** Zendesk, Jira/JSM, OpenAI Support page, and email/web widget → queue → webhook to bot
+- **LLM steps:** classify intent, extract entities (product, error, tenant), summarize ticket
+- **Retrieval:** ground with KB/runbooks; detect “known issue” banners; propose resolution
+- **Deflection paths:** instant answers, guided flows/forms, similar tickets; escalate with summary if confidence low
+- **Feedback loop:** thumbs up/down → eval dataset → weekly prompt/tool retraining
 
 ---
 
 ## User Operations: AI Support Engineer — Ticket Workflow 
-- Channel intake: Slack, Zendesk, Jira/JSM, or OpenAI Support page ticket arrives with org ID, endpoint, error code, severity
-- Auto-triage (gpt-4o-mini): classify intent (billing/auth/latency), extract entities (product, endpoint, SDK, region), set priority and owner queue
-- Grounding: retrieve KB/runbooks, release notes, incident status, similar tickets; surface known-issue banner if matched
-- Candidate reply: propose steps with references (docs, runbook anchors); show confidence, require human send for medium/low
-- Decision gates:
-  - High-confidence known issue → deflect with one-click reply, log artifacts, tag “deflected-known”
-  - Else → escalate to AI Support Engineer with prefilled ticket fields and suggested next actions
-- Human investigation assist: generate repro checklist, request IDs, minimal code sample; suggest SDK/version checks and quick diagnostics
-- Partner loop: if bug suspected, open issue in tracker with auto-filled impact, severity, repro, logs; link Slack thread and customer ticket
-- Closure & learning: update KB/runbook gaps, add to eval dataset, tag topic for future automation; notify product/eng in weekly digest
-- Metrics captured: FCR, deflection, time-to-first-response, resolution time, backlog age, CSAT; override rate and hallucination incidents
+- **Channel intake:** Slack, Zendesk, Jira/JSM, or OpenAI Support page ticket arrives with org ID, endpoint, error code, severity
+- **Auto-triage (gpt-4o-mini):** classify intent (billing/auth/latency), extract entities (product, endpoint, SDK, region), set priority and owner queue
+- **Grounding:** retrieve KB/runbooks, release notes, incident status, similar tickets; surface known-issue banner if matched
+- **Candidate reply:** propose steps with references (docs, runbook anchors); show confidence, require human send for medium/low
+- **Decision gates:**
+  - **High-confidence known issue →** deflect with one-click reply, log artifacts, tag “deflected-known”
+  - **Else →** escalate to AI Support Engineer with prefilled ticket fields and suggested next actions
+- **Human investigation assist:** generate repro checklist, request IDs, minimal code sample; suggest SDK/version checks and quick diagnostics
+- **Partner loop:** if bug suspected, open issue in tracker with auto-filled impact, severity, repro, logs; link Slack thread and customer ticket
+- **Closure & learning:** update KB/runbook gaps, add to eval dataset, tag topic for future automation; notify product/eng in weekly digest
+- **Metrics captured:** FCR, deflection, time-to-first-response, resolution time, backlog age, CSAT; override rate and hallucination incidents
 
 ---
 
 ## Staff Proposal: Multi-Channel Intake Changes (Zendesk, Jira/JSM, OpenAI Support)
-- Unified intake gateway: standardize webhooks from Zendesk, Jira/JSM, and Support page to API Gateway → normalized ticket schema
-- Normalization schema: require org_id, user_id, product, endpoint, SDK/version, region, severity, reproduction artifacts, correlation_id
-- Source auth: per-source HMAC secrets, replay protection, rate limits; source label preserved for reporting and routing
-- Smart triage: gpt-4o-mini for classification/entity extraction; policy thresholds for auto-deflect vs. human-in-loop
-- Known-issue banners: dynamic banners on Support page and agent console; driven by releases/incidents and KB updates
-- Slack integration: slash command to create/attach tickets; thread-to-ticket linking; on-call handoff templates
-- Quality loop: offline evals from historical tickets; shadow A/B by source; weekly error analysis to tune prompts/tools
-- Dashboards: deflection, FCR, TFR, backlog age, CSAT, cost/ticket by source; failure modes and override rates
-- Rollout: Phase 1 Zendesk (agents only) → Phase 2 JSM → Phase 3 Support page end-user deflection; feature flags and auto-disable on breach
+- **Unified intake gateway:** standardize webhooks from Zendesk, Jira/JSM, and Support page to API Gateway → normalized ticket schema
+- **Normalization schema:** require org_id, user_id, product, endpoint, SDK/version, region, severity, reproduction artifacts, correlation_id
+- **Source auth:** per-source HMAC secrets, replay protection, rate limits; source label preserved for reporting and routing
+- **Smart triage:** gpt-4o-mini for classification/entity extraction; policy thresholds for auto-deflect vs. human-in-loop
+- **Known-issue banners:** dynamic banners on Support page and agent console; driven by releases/incidents and KB updates
+- **Slack integration:** slash command to create/attach tickets; thread-to-ticket linking; on-call handoff templates
+- **Quality loop:** offline evals from historical tickets; shadow A/B by source; weekly error analysis to tune prompts/tools
+- **Dashboards:** deflection, FCR, TFR, backlog age, CSAT, cost/ticket by source; failure modes and override rates
+- **Rollout:** Phase 1 Zendesk (agents only) → Phase 2 JSM → Phase 3 Support page end-user deflection; feature flags and auto-disable on breach
 
+
+
+
+## Architecture at a Glance
+```mermaid
+graph TB
+  subgraph Entry[User Channels]
+    A[Slack App: HMAC] -->|HMAC| GW[API Gateway]
+    S[Slack Bot] -->|Events| GW
+  end
+
+  subgraph Edge[Security Perimeter]
+    GW --> WAF[AWS WAF]
+    WAF --> ALB[ALB + mTLS]
+    ALB --> EKS[EKS Cluster]
+  end
+
+  subgraph Core[Core Engine]
+    EKS --> WH[Webhook Handler]
+    WH --> INT[Intent Classifier]
+    INT -->|Incident Qs| ORCH[Query Orchestrator]
+    INT -->|Health| LIVE[Live Telemetry Fetcher]
+    ORCH --> CTX[Context Manager]
+    CTX --> REDIS[(Redis 5m)]
+    CTX --> DDB[(DynamoDB History)]
+    ORCH --> VS[(OpenSearch Vector)]
+  end
+
+  subgraph AI[AI Processing - Bedrock]
+    ORCH --> MINI[gpt-4o-mini]
+    ORCH --> GPT[gpt-4o]
+    MINI --> RESP[Response Generator]
+    GPT --> RESP
+  end
+
+  subgraph Knowledge[Knowledge Pipeline - Write]
+    GH[GitHub Webhooks] --> SQS[SQS Buffer]
+    CONF[Confluence Webhooks] --> SQS
+    SWP[Nightly Sweeper] --> SQS
+    SQS --> XTR[Lambda Extractor]
+    XTR --> EMB[OpenAI Embeddings: text-embedding-3-large]
+    EMB --> VS
+    EMB --> S3[(S3 Backup)]
+  end
+
+  subgraph Live[Live Data Sources]
+    LIVE --> DDog[DataDog]
+    LIVE --> PD[PagerDuty]
+    LIVE --> GHAPI[GitHub]
+  end
+
+  RESP --> A
+  RESP --> S
+```
+
+Key decisions
+- RAG: split read (ORCH→OpenSearch) vs write (pipeline→OpenSearch)
+- Cost control: 60% gpt-4o-mini / 40% gpt-4o routing; cache + circuit breakers
+- Spike safety: SQS buffers bursts; token bucket rate limiting on APIs
+
+---
 
 ## Ticket Flow: Zendesk/Jira Service Management → Resolution
 - Intake (Zendesk/JSM → API Gateway)
@@ -132,65 +193,6 @@ sequenceDiagram
   end
   DEC->>CTX: metrics + eval set update
 ```
-
----
-
-## Architecture at a Glance
-```mermaid
-graph TB
-  subgraph Entry[User Channels]
-    A[Slack App: HMAC] -->|HMAC| GW[API Gateway]
-    S[Slack Bot] -->|Events| GW
-  end
-
-  subgraph Edge[Security Perimeter]
-    GW --> WAF[AWS WAF]
-    WAF --> ALB[ALB + mTLS]
-    ALB --> EKS[EKS Cluster]
-  end
-
-  subgraph Core[Core Engine]
-    EKS --> WH[Webhook Handler]
-    WH --> INT[Intent Classifier]
-    INT -->|Incident Qs| ORCH[Query Orchestrator]
-    INT -->|Health| LIVE[Live Telemetry Fetcher]
-    ORCH --> CTX[Context Manager]
-    CTX --> REDIS[(Redis 5m)]
-    CTX --> DDB[(DynamoDB History)]
-    ORCH --> VS[(OpenSearch Vector)]
-  end
-
-  subgraph AI[AI Processing - Bedrock]
-    ORCH --> MINI[gpt-4o-mini]
-    ORCH --> GPT[gpt-4o]
-    MINI --> RESP[Response Generator]
-    GPT --> RESP
-  end
-
-  subgraph Knowledge[Knowledge Pipeline - Write]
-    GH[GitHub Webhooks] --> SQS[SQS Buffer]
-    CONF[Confluence Webhooks] --> SQS
-    SWP[Nightly Sweeper] --> SQS
-    SQS --> XTR[Lambda Extractor]
-    XTR --> EMB[OpenAI Embeddings: text-embedding-3-large]
-    EMB --> VS
-    EMB --> S3[(S3 Backup)]
-  end
-
-  subgraph Live[Live Data Sources]
-    LIVE --> DDog[DataDog]
-    LIVE --> PD[PagerDuty]
-    LIVE --> GHAPI[GitHub]
-  end
-
-  RESP --> A
-  RESP --> S
-```
-
-Key decisions
-- RAG: split read (ORCH→OpenSearch) vs write (pipeline→OpenSearch)
-- Cost control: 60% gpt-4o-mini / 40% gpt-4o routing; cache + circuit breakers
-- Spike safety: SQS buffers bursts; token bucket rate limiting on APIs
 
 ---
 
