@@ -6,11 +6,12 @@
 
 ## Agenda (25 min)
 - Problem & stakes (1m)
-- Architecture at a glance (4m)
-- Guardrails & control loops (4m)
-- EKS, CI/CD, rollout (4m)
-- Observability & performance (4m)
-- Impact, risks, roadmap (4m)
+- Ticket deflection system (3m)
+- Architecture at a glance (3m)
+- Guardrails & control loops (3m)
+- EKS, CI/CD, rollout (incl. support) (4m)
+- Observability & performance (3m)
+- Impact, metrics, stakeholders, roadmap (4m)
 - Q&A (4m)
 
 ---
@@ -19,6 +20,15 @@
 - On-call pain: high noise, long context-building, tool-hopping at 3 AM
 - Goal: reduce MTTR and ticket volume via trustworthy, production-safe AI
 - Constraint: zero heroics — security, cost, and reliability are first-class
+
+---
+
+## Support Ticketing Deflection System (~3 min)
+- Entry points: support portal/email/web widget → queue (e.g., Zendesk/JSM) → webhook to bot
+- LLM steps: classify intent, extract entities (product, error, tenant), summarize ticket
+- Retrieval: ground with KB/runbooks; detect “known issue” banners; propose resolution
+- Deflection paths: instant answers, guided flows/forms, similar tickets; escalate with summary if confidence low
+- Feedback loop: thumbs up/down → eval dataset → weekly prompt/tool retraining
 
 ---
 
@@ -96,6 +106,17 @@ Control-loop framing
 
 ---
 
+## Assumptions & Alternatives (~1 min)
+Assumptions
+- Support platform exposes webhooks/APIs; KB exists but is fragmented
+- Acceptable deflection target: 15–30% for L1 known-issues; human-in-loop required
+
+Alternatives considered
+- Rules-only triage (cheap, brittle) vs LLM classification + RAG (scalable, higher precision)
+- “Copilot only” responses vs gated automation for simple actions (status lookups, resets)
+
+---
+
 ## EKS, CI/CD, Rollout (~4 min)
 - EKS Multi-AZ: autoscaling via Karpenter/Cluster Autoscaler; mTLS between services
 - CI/CD: GitHub Actions → Bazel → container image → ArgoCD progressive delivery
@@ -108,9 +129,28 @@ Related work for credibility
 
 ---
 
+## Phased Rollout & Metrics (Support) (~3 min)
+Phases
+- Phase 0: Instrument baseline (deflection, FCR, TTR, backlog age, CSAT)
+- Phase 1: Read-only assistant in agent console; auto-suggested replies; opt-in feedback
+- Phase 2: End-user deflection on portal with confidence gates and safe topics
+- Phase 3: Limited automation (e.g., status lookups) behind feature flags and audits
+
+Success metrics
+- Deflection rate, FCR, time-to-first-response, resolution time, CSAT, agent handle time
+- Quality guardrails: false-positive deflections, override rate, hallucination incidents
+- Scalability: QPS, cost/ticket, concurrency headroom, backlog distribution
+
+Validation steps
+- Offline eval set from historical tickets → acceptance thresholds
+- Live shadow A/B in one queue → expand by cohort
+- Red-team tests; guardrail monitors with auto-disable on breach
+
+---
+
 ## Observability & Performance (~4 min)
 - Tracing: end-to-end traces per user query (bot → ORCH → vendors)
-- Metrics: p95 latency, deflection rate, resolver accuracy, cost/query
+- Metrics: p95 latency, deflection rate, FCR, time-to-first-response, backlog age, resolver accuracy, cost/query
 - Logging: structured, redaction by policy, correlation IDs
 - Profiling: eBPF/Pyroscope harness for CPU hot spots and tail latencies
 - Performance playbook: pre-warm connections, parallel fetches, cache tiers
@@ -122,6 +162,14 @@ Related work for credibility
 - Mutual TLS between internal services (certs via ACM)
 - Secrets Manager with local cache TTLs; rotation schedules per secret class
 - Rate limiting per vendor SLA; circuit breakers and timeouts
+
+---
+
+## Stakeholders & Governance (~1 min)
+- Product & Support leadership: targets, deflection thresholds, CSAT safeguards
+- Platform/SRE: reliability, cost, performance budgets, rollout gates
+- Data Privacy/Legal/Sec: PII handling, retention, audit trails, model/data boundaries
+- Change governance: RFCs, feature flags, staged rollouts, post-launch reviews
 
 ---
 
