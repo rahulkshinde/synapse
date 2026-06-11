@@ -24,7 +24,7 @@
 ---
 
 ## Support Ticketing Deflection System
-- Entry points: support portal/email/web widget → queue (e.g., Zendesk/JSM) → webhook to bot
+- Entry points: Zendesk, Jira/JSM, OpenAI Support page, and email/web widget → queue → webhook to bot
 - LLM steps: classify intent, extract entities (product, error, tenant), summarize ticket
 - Retrieval: ground with KB/runbooks; detect “known issue” banners; propose resolution
 - Deflection paths: instant answers, guided flows/forms, similar tickets; escalate with summary if confidence low
@@ -44,6 +44,19 @@
 - Partner loop: if bug suspected, open issue in tracker with auto-filled impact, severity, repro, logs; link Slack thread and customer ticket
 - Closure & learning: update KB/runbook gaps, add to eval dataset, tag topic for future automation; notify product/eng in weekly digest
 - Metrics captured: FCR, deflection, time-to-first-response, resolution time, backlog age, CSAT; override rate and hallucination incidents
+
+---
+
+## Staff Proposal: Multi-Channel Intake Changes (Zendesk, Jira/JSM, OpenAI Support)
+- Unified intake gateway: standardize webhooks from Zendesk, Jira/JSM, and Support page to API Gateway → normalized ticket schema
+- Normalization schema: require org_id, user_id, product, endpoint, SDK/version, region, severity, reproduction artifacts, correlation_id
+- Source auth: per-source HMAC secrets, replay protection, rate limits; source label preserved for reporting and routing
+- Smart triage: gpt-4o-mini for classification/entity extraction; policy thresholds for auto-deflect vs. human-in-loop
+- Known-issue banners: dynamic banners on Support page and agent console; driven by releases/incidents and KB updates
+- Slack integration: slash command to create/attach tickets; thread-to-ticket linking; on-call handoff templates
+- Quality loop: offline evals from historical tickets; shadow A/B by source; weekly error analysis to tune prompts/tools
+- Dashboards: deflection, FCR, TFR, backlog age, CSAT, cost/ticket by source; failure modes and override rates
+- Rollout: Phase 1 Zendesk (agents only) → Phase 2 JSM → Phase 3 Support page end-user deflection; feature flags and auto-disable on breach
 
 ---
 
