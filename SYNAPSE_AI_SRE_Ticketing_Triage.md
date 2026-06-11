@@ -267,6 +267,7 @@ Roadmap
 
 
 ## My notes
+
 ## User Operations: AI Support Engineer — Ticket Workflow 
 - **Channel intake:** Slack, Zendesk, Jira/JSM, or OpenAI Support page ticket arrives with org ID, endpoint, error code, severity
 - **Auto-triage (gpt-4o-mini):** classify intent (billing/auth/latency), extract entities (product, endpoint, SDK, region), set priority and owner queue
