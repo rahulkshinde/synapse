@@ -1,12 +1,13 @@
 # Synapse — Presentation
 
 > Support Ticket Deflection System — RAG + Guardrails, Safer Automation
+
 ---
 
 ## Agenda
 - Problem & stakes
 - Ticket deflection system
-- Architecture at a glance 
+- Architecture at a glance
 - Guardrails & control loops
 - EKS, CI/CD, rollout (incl. support)
 - Observability & performance
@@ -87,6 +88,7 @@ Key decisions
 - RAG: split read (ORCH→OpenSearch) vs write (pipeline→OpenSearch)
 - Cost control: 60% gpt-4o-mini / 40% gpt-4o routing; cache + circuit breakers
 - Spike safety: SQS buffers bursts; token bucket rate limiting on APIs
+
 ---
 
 ## Guardrails & Control Loops
@@ -111,6 +113,7 @@ Alternatives considered
 - Rules-only triage (cheap, brittle) vs LLM classification + RAG (scalable, higher precision)
 - “Copilot only” responses vs gated automation for simple actions (status lookups, resets)
 
+
 ---
 
 ## EKS, CI/CD, Rollout
@@ -118,6 +121,7 @@ Alternatives considered
 - CI/CD: GitHub Actions → Bazel → container image → ArgoCD progressive delivery
 - Feature flags: staged enablement by team/service; kill-switches
 - Rollout plan: internal champions → single team → region → global
+
 
 ---
 
@@ -137,6 +141,7 @@ Validation steps
 - Offline eval set from historical tickets → acceptance thresholds
 - Live shadow A/B in one queue → expand by cohort
 - Red-team tests; guardrail monitors with auto-disable on breach
+
 
 ---
 
