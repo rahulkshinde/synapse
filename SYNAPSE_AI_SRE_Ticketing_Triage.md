@@ -69,7 +69,7 @@ graph TB
     CONF[Confluence Webhooks] --> SQS
     SWP[Nightly Sweeper] --> SQS
     SQS --> XTR[Lambda Extractor]
-    XTR --> EMB[OpenAI Embeddings (text-embedding-3-large)]
+    XTR --> EMB[OpenAI Embeddings: text-embedding-3-large]
     EMB --> VS
     EMB --> S3[(S3 Backup)]
   end
