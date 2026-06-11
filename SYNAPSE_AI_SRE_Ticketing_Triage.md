@@ -33,7 +33,7 @@
 ---
 
 ## User Operations: AI Support Engineer — Ticket Workflow 
-- Channel intake: Slack or portal ticket arrives with org ID, endpoint, error code, severity
+- Channel intake: Slack, Zendesk, Jira/JSM, or OpenAI Support page ticket arrives with org ID, endpoint, error code, severity
 - Auto-triage (gpt-4o-mini): classify intent (billing/auth/latency), extract entities (product, endpoint, SDK, region), set priority and owner queue
 - Grounding: retrieve KB/runbooks, release notes, incident status, similar tickets; surface known-issue banner if matched
 - Candidate reply: propose steps with references (docs, runbook anchors); show confidence, require human send for medium/low
@@ -57,6 +57,81 @@
 - Quality loop: offline evals from historical tickets; shadow A/B by source; weekly error analysis to tune prompts/tools
 - Dashboards: deflection, FCR, TFR, backlog age, CSAT, cost/ticket by source; failure modes and override rates
 - Rollout: Phase 1 Zendesk (agents only) → Phase 2 JSM → Phase 3 Support page end-user deflection; feature flags and auto-disable on breach
+
+
+## Ticket Flow: Zendesk/Jira Service Management → Resolution
+- Intake (Zendesk/JSM → API Gateway)
+  - Source sends HMAC-signed webhook; rate limits per source; replay protection
+  - Normalize payload → {org_id, user_id, product, endpoint, sdk_version, region, severity, attachments, correlation_id}
+- Security perimeter (WAF → ALB → EKS)
+  - Raw body preserved for signature verification; header canonicalization
+- Webhook Handler (EKS)
+  - Validate and transform; attach source metadata; buffer to SQS on spikes
+- Intent classification (gpt-4o-mini)
+  - Classify (billing/auth/latency/SDK), extract entities; fall back to rules on very low confidence
+- Context manager (Redis/DynamoDB)
+  - Fetch cached context (Redis 5m), store conversation history (DynamoDB), dedupe via idempotency key
+- Retrieval (OpenSearch + live fetches)
+  - Vector search over KB/runbooks/release notes; fetch live status/metrics/incidents as needed
+- Candidate response (OpenAI routing)
+  - Route simple to gpt-4o-mini; complex to gpt-4o; return structured JSON with steps, refs, confidence
+- Decision engine (deflect vs escalate)
+  - If known-issue + high confidence + safe topic → post public reply in Zendesk/JSM, tag deflected-known, add internal note
+  - Else → assign to AI Support Engineer queue with summary, repro checklist, next-step buttons
+- Agent assist (console/Slack)
+  - Sidebar suggestions, macros; Slack slash commands to fetch/attach diagnostics to ticket
+- Audit & safety
+  - Structured logs with correlation_id; PII redaction; timeouts, retries, rate limits
+- Metrics emitted
+  - FCR, deflection success/fail, override rate, time-to-first-response, resolution time, backlog age, cost/ticket
+- KB & eval updates
+  - On resolution, update KB/runbook gaps; ingest to vector index; add Q/A to eval set
+- Closure & digest
+  - CSAT request and reason codes; weekly digest to Product/Eng with top topics and automation backlog
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant ZD as Zendesk
+  participant JSM as Jira_JSM
+  participant SUP as Support_Page
+  participant GW as API_Gateway
+  participant SEC as WAF_ALB
+  participant WH as Webhook_Handler
+  participant CL as Classifier
+  participant CTX as Context_Manager
+  participant RET as Retrieval
+  participant DEC as Decision_Engine
+  participant AG as Agent_Console
+  participant ENG as AI_Support_Engineer
+
+  alt Zendesk
+    ZD->>GW: HMAC webhook (ticket created/updated)
+  else Jira JSM
+    JSM->>GW: HMAC webhook
+  else Support Page
+    SUP->>GW: Web form submit
+  end
+
+  GW->>SEC: forward (rate-limit, replay check)
+  SEC->>WH: request with raw body
+  WH->>WH: validate + normalize payload
+  WH-->>WH: buffer to SQS on spike
+  WH->>CL: classify intent + extract entities (gpt-4o-mini)
+  CL-->>WH: labels, entities, confidence
+  WH->>CTX: fetch cache/history
+  CTX-->>WH: context blob
+  WH->>RET: retrieve KB, similar tickets, live status
+  RET-->>WH: grounded snippets + signals
+  WH->>DEC: assemble candidate response
+  DEC-->>AG: suggest reply + confidence
+  alt High confidence known issue
+    DEC->>ZD: auto public reply + tag deflected-known
+  else Needs human review
+    DEC->>ENG: escalate with summary + next steps
+  end
+  DEC->>CTX: metrics + eval set update
+```
 
 ---
 
