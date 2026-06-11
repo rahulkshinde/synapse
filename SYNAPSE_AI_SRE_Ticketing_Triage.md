@@ -17,7 +17,7 @@
 ---
 
 ## Problem & Stakes
-- **On-call pain:** high noise, long context-building, tool-hopping during incidents
+- **On-call pain:** high noise, long context-building, tool-hopping during multiple high pririty tickets/incidents
 - **Goal:** reduce MTTR and ticket volume via trustworthy, production-safe AI
 - **Constraint:** security, cost, and reliability
 
