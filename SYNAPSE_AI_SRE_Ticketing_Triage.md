@@ -1,29 +1,28 @@
-# Synapse AI SRE Assistant — Presentation README (25 min)
+# Synapse — Presentation
 
-> A production-grade AI assistant for on-call SREs: fast context, safer actions, measurable impact.
+> Support Ticket Deflection System — RAG + Guardrails, Safer Automation
+---
+
+## Agenda
+- Problem & stakes
+- Ticket deflection system
+- Architecture at a glance 
+- Guardrails & control loops
+- EKS, CI/CD, rollout (incl. support)
+- Observability & performance
+- Impact, metrics, stakeholders, roadmap
+- Q&A
 
 ---
 
-## Agenda (25 min)
-- Problem & stakes (1m)
-- Ticket deflection system (3m)
-- Architecture at a glance (3m)
-- Guardrails & control loops (3m)
-- EKS, CI/CD, rollout (incl. support) (4m)
-- Observability & performance (3m)
-- Impact, metrics, stakeholders, roadmap (4m)
-- Q&A (4m)
-
----
-
-## Problem & Stakes (~1 min)
-- On-call pain: high noise, long context-building, tool-hopping at 3 AM
+## Problem & Stakes
+- On-call pain: high noise, long context-building, tool-hopping during incidents
 - Goal: reduce MTTR and ticket volume via trustworthy, production-safe AI
-- Constraint: zero heroics — security, cost, and reliability are first-class
+- Constraint: security, cost, and reliability
 
 ---
 
-## Support Ticketing Deflection System (~3 min)
+## Support Ticketing Deflection System
 - Entry points: support portal/email/web widget → queue (e.g., Zendesk/JSM) → webhook to bot
 - LLM steps: classify intent, extract entities (product, error, tenant), summarize ticket
 - Retrieval: ground with KB/runbooks; detect “known issue” banners; propose resolution
@@ -32,7 +31,7 @@
 
 ---
 
-## Architecture at a Glance (~4 min)
+## Architecture at a Glance
 ```mermaid
 graph TB
   subgraph Entry[User Channels]
@@ -58,10 +57,10 @@ graph TB
   end
 
   subgraph AI[AI Processing - Bedrock]
-    ORCH --> H[Claude 3 Haiku]
-    ORCH --> SON[Claude 3 Sonnet]
-    H --> RESP[Response Generator]
-    SON --> RESP
+    ORCH --> MINI[gpt-4o-mini]
+    ORCH --> GPT[gpt-4o]
+    MINI --> RESP[Response Generator]
+    GPT --> RESP
   end
 
   subgraph Knowledge[Knowledge Pipeline - Write]
@@ -69,7 +68,7 @@ graph TB
     CONF[Confluence Webhooks] --> SQS
     SWP[Nightly Sweeper] --> SQS
     SQS --> XTR[Lambda Extractor]
-    XTR --> EMB[Titan Embeddings]
+    XTR --> EMB[OpenAI Embeddings (text-embedding-3-large)]
     EMB --> VS
     EMB --> S3[(S3 Backup)]
   end
@@ -86,14 +85,11 @@ graph TB
 
 Key decisions
 - RAG: split read (ORCH→OpenSearch) vs write (pipeline→OpenSearch)
-- Cost control: 60% Haiku / 40% Sonnet routing; cache + circuit breakers
+- Cost control: 60% gpt-4o-mini / 40% gpt-4o routing; cache + circuit breakers
 - Spike safety: SQS buffers bursts; token bucket rate limiting on APIs
-
-See deep dive for details: [AI_SRE_ASSISTANT_README_INTERVIEW.md](./AI_SRE_ASSISTANT_README_INTERVIEW.md)
-
 ---
 
-## Guardrails & Control Loops (~4 min)
+## Guardrails & Control Loops
 - Policy tiers: read-only by default; action paths require explicit confirmation and safety checks
 - SLO gates: canary windows, burn-rate alarms, health windows post-change
 - Fallbacks: degrade gracefully — no silent failures
@@ -106,10 +102,10 @@ Control-loop framing
 
 ---
 
-## Assumptions & Alternatives (~1 min)
+## Assumptions & Alternatives
 Assumptions
 - Support platform exposes webhooks/APIs; KB exists but is fragmented
-- Acceptable deflection target: 15–30% for L1 known-issues; human-in-loop required
+- Acceptable deflection target: 15–30% for L1 known-issues; human-in-loop required (PCR required)
 
 Alternatives considered
 - Rules-only triage (cheap, brittle) vs LLM classification + RAG (scalable, higher precision)
@@ -117,19 +113,15 @@ Alternatives considered
 
 ---
 
-## EKS, CI/CD, Rollout (~4 min)
+## EKS, CI/CD, Rollout
 - EKS Multi-AZ: autoscaling via Karpenter/Cluster Autoscaler; mTLS between services
 - CI/CD: GitHub Actions → Bazel → container image → ArgoCD progressive delivery
 - Feature flags: staged enablement by team/service; kill-switches
 - Rollout plan: internal champions → single team → region → global
 
-Related work for credibility
-- Trustedpath Config Controller (Kubernetes operator) — config distribution at scale
-  - See: [R -Trustedpath.md](./R%20-Trustedpath.md)
-
 ---
 
-## Phased Rollout & Metrics (Support) (~3 min)
+## Phased Rollout & Metrics (Support)
 Phases
 - Phase 0: Instrument baseline (deflection, FCR, TTR, backlog age, CSAT)
 - Phase 1: Read-only assistant in agent console; auto-suggested replies; opt-in feedback
@@ -148,7 +140,7 @@ Validation steps
 
 ---
 
-## Observability & Performance (~4 min)
+## Observability & Performance
 - Tracing: end-to-end traces per user query (bot → ORCH → vendors)
 - Metrics: p95 latency, deflection rate, FCR, time-to-first-response, backlog age, resolver accuracy, cost/query
 - Logging: structured, redaction by policy, correlation IDs
@@ -157,7 +149,7 @@ Validation steps
 
 ---
 
-## Security by Default (~2 min)
+## Security by Default
 - HMAC validation at ingress; strict header casing; raw-body signature
 - Mutual TLS between internal services (certs via ACM)
 - Secrets Manager with local cache TTLs; rotation schedules per secret class
@@ -165,7 +157,7 @@ Validation steps
 
 ---
 
-## Stakeholders & Governance (~1 min)
+## Stakeholders & Governance
 - Product & Support leadership: targets, deflection thresholds, CSAT safeguards
 - Platform/SRE: reliability, cost, performance budgets, rollout gates
 - Data Privacy/Legal/Sec: PII handling, retention, audit trails, model/data boundaries
@@ -173,7 +165,7 @@ Validation steps
 
 ---
 
-## Impact, Risks, Roadmap (~4 min)
+## Impact, Risks, Roadmap
 Impact (targets and examples)
 - MTTR: -20–35% in P1/P2 via faster context
 - Ticket deflection: 15–30% of “known issue” L1 tickets
@@ -191,7 +183,7 @@ Roadmap
 
 ---
 
-## Demo Storyboard (~2 min)
+## Demo Storyboard
 1) Incident starts; on-call asks: “Why auth-api 503s?”
 2) Bot replies with:
    - last deploys, error spikes, similar P0s
@@ -201,7 +193,7 @@ Roadmap
 
 ---
 
-## Q&A (4 min)
+## Q&A
 - How do you prevent bad automation? Guardrails + human-in-the-loop + rollbacks
 - What’s your eval strategy? Offline harness + live A/B + SLO watching
 - How do you scale cost-effectively? Model routing, caching, SQS buffering, parallel fetches
