@@ -32,11 +32,26 @@
 
 ---
 
+## User Operations: AI Support Engineer — Ticket Workflow 
+- Channel intake: Slack or portal ticket arrives with org ID, endpoint, error code, severity
+- Auto-triage (gpt-4o-mini): classify intent (billing/auth/latency), extract entities (product, endpoint, SDK, region), set priority and owner queue
+- Grounding: retrieve KB/runbooks, release notes, incident status, similar tickets; surface known-issue banner if matched
+- Candidate reply: propose steps with references (docs, runbook anchors); show confidence, require human send for medium/low
+- Decision gates:
+  - High-confidence known issue → deflect with one-click reply, log artifacts, tag “deflected-known”
+  - Else → escalate to AI Support Engineer with prefilled ticket fields and suggested next actions
+- Human investigation assist: generate repro checklist, request IDs, minimal code sample; suggest SDK/version checks and quick diagnostics
+- Partner loop: if bug suspected, open issue in tracker with auto-filled impact, severity, repro, logs; link Slack thread and customer ticket
+- Closure & learning: update KB/runbook gaps, add to eval dataset, tag topic for future automation; notify product/eng in weekly digest
+- Metrics captured: FCR, deflection, time-to-first-response, resolution time, backlog age, CSAT; override rate and hallucination incidents
+
+---
+
 ## Architecture at a Glance
 ```mermaid
 graph TB
   subgraph Entry[User Channels]
-    A[Webex Bot] -->|HMAC| GW[API Gateway]
+    A[Slack App: HMAC] -->|HMAC| GW[API Gateway]
     S[Slack Bot] -->|Events| GW
   end
 
